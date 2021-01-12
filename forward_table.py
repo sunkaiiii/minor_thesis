@@ -5,5 +5,4 @@ class ForwardTable:
         self.table = {}
 
     def refresh_table(self,node):
-        if node in self.table:
-            pass
+        pass

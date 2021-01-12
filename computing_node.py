@@ -11,5 +11,14 @@ class EdgeComputingNode:
         
 
     def handle_uwb_information_callback(self,uwb_list):
+        for node in uwb_list:
+            print(node)
         self.forward_table.refresh_table(uwb_list)
+
+
+if __name__ == '__main__':
+    node = EdgeComputingNode()
+    node.detect_nodes()
+    import time
+    time.sleep(30)
 
