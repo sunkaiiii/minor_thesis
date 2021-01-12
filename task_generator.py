@@ -1,6 +1,8 @@
 from enum import Enum
 from threading import Thread
 import random
+import computing_node
+import time
 
 class TaskType(Enum):
     LocalComputing = 1
@@ -22,14 +24,25 @@ class ComputingTask(Thread):
         else:
             raise TypeError
     def run(self):
+        print(str(self.task_type))
         self.action()
 
 
-class TaskGenerator:
-    def generate_task(self):
-        r = random.randint(TaskType.LocalComputing,TaskType.EdgeOffloading)
-        return ComputingTask(r,self.default_action)
+class TaskGenerator(Thread):
+    def __init__(self,callback):
+        self.callback = callback
+    
+    def run(self):
+        while True:
+            task = self.generate_task()
+            self.callback(task)
+            time.sleep(random.randint(1,10))
+
+
+    def generate_task(self)->ComputingTask:
+        r = random.randint(1,4)
+        task = ComputingTask(r,self.default_action)
+        return task
     
     def default_action(self):
         pass
-

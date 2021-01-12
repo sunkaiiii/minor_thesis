@@ -44,10 +44,6 @@ def handle_data(handle,value):
     while i>0:
         unpack_str += 'hib'
         i -= 1
-    unpacked_data = struct.unpack(unpack_str,value)
-    print(unpacked_data)
-    print(type(unpacked_data))
-    print(hex(unpacked_data[2])[2:])
     unpacked_data = struct.unpack(unpack_str,value)[2:]
     print(unpacked_data)
     result = []
@@ -56,7 +52,6 @@ def handle_data(handle,value):
         id,distance,quality = unpacked_data[(i-1)*3:(i-1)*3+3]
         result.append(UWBInformation(id,distance,quality))
         i-=1
-    print(result)
     return result
 
 
