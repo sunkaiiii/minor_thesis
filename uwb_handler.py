@@ -15,7 +15,7 @@ class UWBHandler:
     def __get_self_id(self):
         return 'DW2C8B'
 
-    def __handle_detect_response_data(self,handle,value):
+    def __handle_detect_response_data(self,handle:int,value:bytes)->[UWBInformation]:
         """
         handle -- integer, characteristic read handle the data was received on
         value -- bytearray, the data returned in the notification, 
@@ -59,10 +59,16 @@ class UWBHandler:
         ldm =  cdev.char_write("a02b947e-df97-4516-996a-1882521e0ead",bytearray([1]))
         ldm =  cdev.char_read("a02b947e-df97-4516-996a-1882521e0ead")
         cdev.subscribe('003bbdf2-c634-4b3d-ab56-7ec889b89a37',callback = self.__handle_detect_response_data)
+    
+    def set_to_anchor_mode(self):
+        pass
+
+    def set_to_tag_mode(self):
+        pass
         
 
 class UWBInformation:
-    def __init__(self, id, distance, quality):
+    def __init__(self, id:str, distance:int, quality:int):
         self.id = id
         self.quality = distance
         self.distance = quality
