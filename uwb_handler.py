@@ -2,6 +2,16 @@ import pygatt
 import time
 import struct
 import json
+from multiprocessing import Process
+
+class UWBInformation:
+    def __init__(self, id:str, distance:int, quality:int):
+        self.id = id
+        self.quality = quality
+        self.distance = distance
+    def __str__(self):
+        return "{"+"id:{0}, distance:{1}, quality:{2}".format(self.id,self.distance,self.quality) + "}"
+
 
 class UWBHandler:
     def __init__(self):
@@ -21,10 +31,6 @@ class UWBHandler:
         value -- bytearray, the data returned in the notification, 
         the length of the data should be 2+7*(number of devices), with the 1 byte of data type, 1 byte of number of nodes, 2 bytes of node, 4 bytes of the value of distance, 1 byte of quality
         """
-        if self.adapter is not None:
-            self.adapter.stop()
-        if self.call_back_action is None:
-            return
         length = len(value) - 2
         if length % 7 != 0 or length == 0:
             return
@@ -43,22 +49,29 @@ class UWBHandler:
             i-=1
         print(result)
         self.call_back_action(result)
+        if self.adapter is not None:
+            if self.cdev is not None:
+                self.adapter.disconnect(self.cdev)
+            self.adapter.stop()
+        if self.call_back_action is None:
+            return
         return result
 
     def set_detect_status(self):
         self.adapter = pygatt.GATTToolBackend()
+        self.cdev = None
+        self.adapter.reset()
         if self.device_address is None:
-            self.adapter.reset()
             ble_devices = self.adapter.scan(run_as_root=True)
             for dev in ble_devices: 
                 print("%s %s" % (dev['name'] , dev['address']))
                 if dev['name'] == self.device_id:
                     self.device_address = dev['address']
         self.adapter.start()
-        cdev = self.adapter.connect(self.device_address)
-        ldm =  cdev.char_write("a02b947e-df97-4516-996a-1882521e0ead",bytearray([1]))
-        ldm =  cdev.char_read("a02b947e-df97-4516-996a-1882521e0ead")
-        cdev.subscribe('003bbdf2-c634-4b3d-ab56-7ec889b89a37',callback = self.__handle_detect_response_data)
+        self.cdev = self.adapter.connect(self.device_address)
+        ldm =  self.cdev.char_write("a02b947e-df97-4516-996a-1882521e0ead",bytearray([1]))
+        ldm =  self.cdev.char_read("a02b947e-df97-4516-996a-1882521e0ead")
+        self.cdev.subscribe('003bbdf2-c634-4b3d-ab56-7ec889b89a37',callback = self.__handle_detect_response_data)
     
     def set_to_anchor_mode(self):
         pass
@@ -66,13 +79,12 @@ class UWBHandler:
     def set_to_tag_mode(self):
         pass
         
+def __test_callback(data:[UWBInformation]):
+    pass
 
-class UWBInformation:
-    def __init__(self, id:str, distance:int, quality:int):
-        self.id = id
-        self.quality = distance
-        self.distance = quality
-    def __str__(self):
-        return "{"+"id:{0}, distance:{1}, quality:{2}".format(self.id,self.distance,self.quality) + "}"
+if __name__ == '__main__':
+    handler = UWBHandler()
+    handler.detect_nodes(__test_callback)
+    time.sleep(2000)
 
 

@@ -24,7 +24,7 @@ class ComputingTask(Thread):
         else:
             raise TypeError
     def run(self):
-        print(str(self.task_type))
+        # print(str(self.task_type))
         self.action()
 
 

@@ -20,7 +20,8 @@ class ForwardTable:
         self.__reload_best_id()
 
     def __reload_best_id(self):
-        pass
+        cloest = min(self.table.items(),key=lambda x: x[1][0].distance)
+        self.best_id = cloest[0]
     def get_the_best_node(self):
         return self.best_id
             
@@ -37,10 +38,11 @@ class DistanceRecord:
 if __name__ == '__main__':
     import uwb_handler
     f = ForwardTable()
-    node = uwb_handler.UWBInformation(1,1,1)
-    node2=uwb_handler.UWBInformation(1,2,2)
-    f.refresh_table([node,node2])
-    for n in f.table[1]:
-        print(n)
+    node = uwb_handler.UWBInformation(1,1.123,1)
+    node2=uwb_handler.UWBInformation(1,2.124124,2)
+    node3= uwb_handler.UWBInformation(2,1.03,100)
+    f.refresh_table([node,node2,node3])
+    # for n in f.table[1]:
+    #     print(n)
     
 

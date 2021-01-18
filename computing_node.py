@@ -17,19 +17,20 @@ class EdgeComputingNode(threading.Thread):
         self.task_generator.run()
         time.sleep(100)
         
-    
     def __handle_coming_task(self,task):
         task.run()
-        print(self.forward_table.best_id)
 
     def detect_nodes(self):
-        self.uwb_handler.detect_nodes(self.handle_uwb_information_callback)
+        while True:
+            self.uwb_handler.detect_nodes(self.handle_uwb_information_callback)
+            time.sleep(1)
         
 
     def handle_uwb_information_callback(self,uwb_list):
         for node in uwb_list:
             print(node)
         self.forward_table.refresh_table(uwb_list)
+        print(self.forward_table.best_id)
 
 
 if __name__ == '__main__':
