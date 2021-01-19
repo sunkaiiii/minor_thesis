@@ -12,18 +12,21 @@ def deliever_offloading_task():
     scirpt_file = request.files['scirpt']
     filename = scirpt_file.filename
     scirpt_file.save(filename)
-    exec_script = filename + offloading_url
+    exec_script = 'python3 '+filename + ' ' + offloading_url
     print("start offloading:"+exec_script)
     os.system(exec_script)
-    cached_file_name = task_cacher.create_id(offloading_url)
-    files = {'file',open(os.path.join('cache',cached_file_name),'rb')}
-    back_address = request.remote_addr
-    requests.post(back_address+'/receive_offloading_result',files = files)
+    cached_file_name = os.path.join('cache',task_cacher.create_id(offloading_url))
+    print(cached_file_name)
+    files = {'offloading_file':open(cached_file_name,'rb')}
+    back_address = 'http://' + request.remote_addr + ':5000/receive_offloading_result'
+    print("send offloading result to: " + back_address)
+    r = requests.post(back_address,files = files)
+    print(r.text)
     
 
 @app.route('/receive_offloading_result',methods = ['POST'])
 def receive_offloading_result():
-    offloading_file = request.files['file']
+    offloading_file = request.files['offloading_file']
     if os.path.isdir('offloading'):
         os.mkdir('offloading')
     save_path = os.path.join('offloading',offloading_file.filename)
@@ -31,7 +34,7 @@ def receive_offloading_result():
 
 class ReceiverTaskHandler():
     def run(self):
-        app.run(host='0.0.0.0',debug=False,port=5000)
+        app.run(host='0.0.0.0',debug=True,port=5000)
     
     def start_service(self):
         self.server = Process(target=self.run)
