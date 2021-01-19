@@ -1,5 +1,6 @@
 import requests
 import task_cacher
+import sys
 from task_cacher import CacheData
 
 def offloading_file(url):
@@ -14,4 +15,7 @@ def __send_data_back(data:CacheData):
 
 
 if __name__ == '__main__':
-    offloading_file('https://photo-collection-monash.s3.amazonaws.com/00D35EC9-6845-48B0-B941-A83D85D74660.jpg')
+    if len(sys.argv) > 1:
+        offloading_file(sys.argv[1])
+    else:
+        offloading_file('https://photo-collection-monash.s3.amazonaws.com/00D35EC9-6845-48B0-B941-A83D85D74660.jpg')
