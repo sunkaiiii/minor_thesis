@@ -22,15 +22,17 @@ def deliever_offloading_task():
     print("send offloading result to: " + back_address)
     r = requests.post(back_address,files = files)
     print(r.text)
+    return 'ok'
     
 
 @app.route('/receive_offloading_result',methods = ['POST'])
 def receive_offloading_result():
     offloading_file = request.files['offloading_file']
-    if os.path.isdir('offloading'):
+    if not os.path.isdir('offloading'):
         os.mkdir('offloading')
     save_path = os.path.join('offloading',offloading_file.filename)
     offloading_file.save(save_path)
+    return 'ok'
 
 class ReceiverTaskHandler():
     def run(self):
