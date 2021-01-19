@@ -9,6 +9,9 @@ def offloading_file(url):
     handler = task_cacher.CacheHandler()
     handler.cache_data(data,True)
 
+def __send_data_back(data:CacheData):
+    pass
+
 
 if __name__ == '__main__':
     offloading_file('https://photo-collection-monash.s3.amazonaws.com/00D35EC9-6845-48B0-B941-A83D85D74660.jpg')

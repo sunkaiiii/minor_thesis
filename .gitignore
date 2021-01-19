@@ -123,3 +123,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+yolov3-tiny.weights
+yolov3-tiny.cfg
+coco.names
+000000007454.jpg
