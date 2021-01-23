@@ -5,10 +5,13 @@ import json
 from multiprocessing import Process
 
 class UWBInformation:
-    def __init__(self, id:str, distance:int, quality:int):
+    def __init__(self, id:str, distance:int, quality:int,address:str,device_name:str):
         self.id = id
         self.quality = quality
         self.distance = distance
+        self.address = ''
+        self.device_name = ''
+        # if 
     def __str__(self):
         return "{"+"id:{0}, distance:{1}, quality:{2}".format(self.id,self.distance,self.quality) + "}"
 
@@ -32,6 +35,7 @@ class UWBHandler:
         the length of the data should be 2+7*(number of devices), with the 1 byte of data type, 1 byte of number of nodes, 2 bytes of node, 4 bytes of the value of distance, 1 byte of quality
         """
         length = len(value) - 2
+        print(len(value))
         if length % 7 != 0 or length == 0:
             return
         i = length / 7
@@ -40,14 +44,18 @@ class UWBHandler:
             unpack_str += 'hib'
             i -= 1
         unpacked_data = struct.unpack(unpack_str,value)[2:]
-        print(unpacked_data)
+        # print(unpacked_data)
         result = []
         i = int(length / 7) - 1
         while i >= 0:
             id,distance,quality = unpacked_data[i*3:i*3+3]
-            result.append(UWBInformation('DW'+hex(id)[2:].upper(),distance,quality))
+            hex_id = hex(id)[2:].upper()
+            while len(hex_id) < 4:
+                hex_id = '0'+hex_id
+            result.append(UWBInformation('DW'+hex_id,distance,quality,'',''))
             i-=1
-        print(result)
+        for r in result:
+            print(r)
         self.call_back_action(result)
         if self.adapter is not None:
             if self.cdev is not None:
@@ -69,8 +77,8 @@ class UWBHandler:
                     self.device_address = dev['address']
         self.adapter.start()
         self.cdev = self.adapter.connect(self.device_address)
+        self.cdev.exchange_mtu(128)
         ldm =  self.cdev.char_write("a02b947e-df97-4516-996a-1882521e0ead",bytearray([1]))
-        ldm =  self.cdev.char_read("a02b947e-df97-4516-996a-1882521e0ead")
         self.cdev.subscribe('003bbdf2-c634-4b3d-ab56-7ec889b89a37',callback = self.__handle_detect_response_data)
     
     def set_to_anchor_mode(self):

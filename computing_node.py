@@ -1,5 +1,6 @@
 from forward_table import ForwardTable
 from uwb_handler import UWBHandler
+from uwb_handler import UWBInformation
 import task_generator
 import threading
 import asyncio
@@ -26,7 +27,7 @@ class EdgeComputingNode(threading.Thread):
             time.sleep(1)
         
 
-    def handle_uwb_information_callback(self,uwb_list):
+    def handle_uwb_information_callback(self,uwb_list:[UWBInformation]):
         for node in uwb_list:
             print(node)
         self.forward_table.refresh_table(uwb_list)
