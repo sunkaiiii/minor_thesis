@@ -31,7 +31,7 @@ class EdgeComputingNode(threading.Thread):
         for node in uwb_list:
             print(node)
         self.forward_table.refresh_table(uwb_list)
-        print(self.forward_table.best_id)
+        print(self.forward_table.best_device)
 
 
 if __name__ == '__main__':

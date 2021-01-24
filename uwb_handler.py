@@ -6,12 +6,16 @@ from multiprocessing import Process
 
 class UWBInformation:
     def __init__(self, id:str, distance:int, quality:int,address:str,device_name:str):
+        id_address_map = {'DW29A9':('192.168.31.135','raspberry1'),'DW2A58':('192.168.31.105','raspberry2'),'DW0CC1':('192.168.31.171','raspberry3'),'DW2C8B':('192.168.31.114','raspberry4')}
         self.id = id
         self.quality = quality
         self.distance = distance
         self.address = ''
         self.device_name = ''
-        # if 
+        device_info = id_address_map.get(self.id)
+        if device_info is not None:
+            self.address = device_info[0]
+            self.device_name = device_info[1]
     def __str__(self):
         return "{"+"id:{0}, distance:{1}, quality:{2}".format(self.id,self.distance,self.quality) + "}"
 
