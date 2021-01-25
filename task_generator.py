@@ -45,4 +45,5 @@ class TaskGenerator(Thread):
         return task
     
     def default_action(self):
+        time.sleep(random.randint(1,10))
         pass
