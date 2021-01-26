@@ -10,6 +10,9 @@ class TaskType(Enum):
     EdgeOffloading = 4
 
 class ComputingTask(Thread):
+    """
+    The computing task contains an executable scirpt.
+    """
     def __init__(self, task_type,action):
         super().__init__()
         self.action = action
@@ -25,10 +28,15 @@ class ComputingTask(Thread):
             raise TypeError
     def run(self):
         # print(str(self.task_type))
+        # TODO sending the script file
         self.action()
 
 
 class TaskGenerator(Thread):
+    """
+    Randomly generate a task with a specific type.
+    The types of a task will be four types
+    """
     def __init__(self,callback):
         super().__init__()
         self.callback = callback
@@ -38,11 +46,15 @@ class TaskGenerator(Thread):
             task = self.generate_task()
             self.callback(task)
             # time.sleep(random.randint(1,10))
+
+            # the interval for generating a task may vary depending on different testing method.
             time.sleep(0.2)
 
 
     def generate_task(self)->ComputingTask:
         r = random.randint(1,4)
+
+        #TODO the action would be vary depending on the type of the task
         task = ComputingTask(r,self.default_action)
         return task
     

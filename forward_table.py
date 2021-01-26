@@ -3,6 +3,12 @@ from uwb_handler import UWBInformation
 
 
 class ForwardTable:
+    """
+    The forward table has records of each devices.
+    The name of the device is the ID.
+    the table is a map, which contains id and a list.
+    The list is the records of the UWB information
+    """
     def __init__(self):
         self.max_size = 5000
         self.best_device = None
@@ -10,11 +16,13 @@ class ForwardTable:
 
     def refresh_table(self, nodes: UWBInformation):
         for node in nodes:
+            # create list of UWB information if there is a new id found.
             if self.table.get(node.id) is not None:
                 record_list = self.table[node.id]
             else:
                 record_list = []
             record_list.append(DistanceRecord(node.id, node))
+            # according to the record time, let the newest record in the first place.
             record_list.sort(reverse=True, key=lambda x: x.record_time)
             if len(record_list) > self.max_size:
                 record_list.pop()
@@ -22,6 +30,7 @@ class ForwardTable:
         self.__reload_best_device()
 
     def __reload_best_device(self):
+        # find the closest node according to the distance record.
         cloest = min(self.table.items(),
                      key=lambda x: x[1][0].uwb_information.distance)
         self.best_device = cloest[1][0]

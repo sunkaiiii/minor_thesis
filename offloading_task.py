@@ -3,11 +3,17 @@ import task_cacher
 import sys
 from task_cacher import CacheData
 
+"""
+offloading a file from the remote url
+"""
 def offloading_file(url):
     r = requests.get(url,allow_redirects = True)
     id = task_cacher.create_id(url)
+   
     data = CacheData(id,r.content)
     handler = task_cacher.CacheHandler()
+     # the data will be saved in memory and might be saved in local storage
+     # TODO persistance switch
     handler.cache_data(data,True)
 
 def __send_data_back(data:CacheData):
