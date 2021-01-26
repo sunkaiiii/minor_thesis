@@ -1,12 +1,9 @@
-import computing_node
-import receiver_node
+from computing_node import EdgeComputingNode
 
-class EdgeComputingHandler:
-    def __init__(self):
-        self.computing_node = computing_node.EdgeComputingNode()
-        
 
 
 
 if __name__ == "__main__":
-    print("hello")
+    node = EdgeComputingNode()
+    node.start()
+    node.join()

@@ -2,7 +2,7 @@ from flask import request
 from flask import Flask
 import requests
 import task_cacher
-from multiprocessing import Process
+import subprocess
 import os
 app = Flask(__name__)
 @app.route('/deliever_offloading_task',methods = ['POST'])
@@ -35,19 +35,16 @@ def receive_offloading_result():
     return 'ok'
 
 class ReceiverTaskHandler():
-    def run(self):
-        app.run(host='0.0.0.0',debug=True,port=5000)
-    
+    def __init__(self):
+        self.server = None
     def start_service(self):
-        self.server = Process(target=self.run)
-        self.server.start()
+        self.server = subprocess.Popen('python3 receiver_node.py')
     
     def stop_service(self):
         if self.server is not None:
             self.server.terminate()
 
 if __name__ == '__main__':
-    handler = ReceiverTaskHandler()
-    handler.run()
+    app.run(host='0.0.0.0',debug=True,port=5000)
         
 

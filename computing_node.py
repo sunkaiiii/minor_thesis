@@ -17,33 +17,41 @@ class NodeType(Enum):
 
 class EdgeComputingNode(threading.Thread):
     def __init__(self):
+        super().__init__()
         self.uwb_handler = UWBHandler()
         self.forward_table = ForwardTable()
         self.detect_node_thread = threading.Thread(target=self.detect_nodes)
         self.task_generator = task_generator.TaskGenerator(self.__handle_coming_task)
-        self.task_handler = TaskHandler(self.__handle_queue_is_empty)
+        self.task_handler = TaskHandler(queue_empty_callback=self.__handle_queue_is_empty)
         self.node_type = NodeType.Receiver
         self.receiver = ReceiverTaskHandler()
         self.sender = SenderHandler()
         self.stop = False
     
     def run(self):
-        self.detect_node_thread.run()
-        self.task_generator.run()
-        self.task_handler.run()
-        self.__control_sender_and_receiver_service()
+        print("start edge computing services")
+        self.task_generator.start()
+        self.task_handler.start()
+        # self.__control_sender_and_receiver_service()
+        self.task_generator.join()
 
     
     def __control_sender_and_receiver_service(self):
         if self.node_type == NodeType.Receiver:
+            print("start to change the node to Receiver")
             self.receiver.start_service()
             self.uwb_handler.set_to_anchor_mode()
+            self.stop = True
         elif self.node_type == NodeType.Sender:
             self.receiver.stop_service()
             self.uwb_handler.set_to_tag_mode()
+            self.stop = False
+            self.detect_node_thread.start()
+            print("start to change the node to Sender")
             
 
     def __handle_coming_task(self,task:ComputingTask):
+        print("task is generated")
         if task.task_type == TaskType.LocalComputing or task.task_type == TaskType.LocalOffloading:
             self.task_handler.add_new_task(task)
         else:
@@ -57,15 +65,17 @@ class EdgeComputingNode(threading.Thread):
             self.__control_sender_and_receiver_service()
 
     def __handle_queue_is_empty(self):
+        print("queue is empty")
         if self.node_type == NodeType.Sender:
             self.node_type = NodeType.Receiver
             self.__control_sender_and_receiver_service()
 
 
     def detect_nodes(self):
-        while True:
-            self.uwb_handler.detect_nodes(self.handle_uwb_information_callback)
+        self.uwb_handler.detect_nodes(self.handle_uwb_information_callback)
+        while not self.stop:
             time.sleep(1)
+        self.uwb_handler.stop_detect_nodes()
         
 
     def handle_uwb_information_callback(self,uwb_list:[UWBInformation]):
@@ -81,6 +91,6 @@ if __name__ == '__main__':
     # import time
     # time.sleep(30)
     node = EdgeComputingNode()
-    node.run()
+    node.start()
     node.join()
 

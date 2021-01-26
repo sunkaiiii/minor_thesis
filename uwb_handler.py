@@ -4,9 +4,11 @@ import struct
 import json
 from multiprocessing import Process
 
+
 class UWBInformation:
-    def __init__(self, id:str, distance:int, quality:int,address:str,device_name:str):
-        id_address_map = {'DW29A9':('192.168.31.135','raspberry1'),'DW2A58':('192.168.31.105','raspberry2'),'DW0CC1':('192.168.31.171','raspberry3'),'DW2C8B':('192.168.31.114','raspberry4')}
+    def __init__(self, id: str, distance: int, quality: int, address: str, device_name: str):
+        id_address_map = {'DW29A9': ('192.168.31.135', 'raspberry1'), 'DW2A58': ('192.168.31.105', 'raspberry2'), 'DW0CC1': (
+            '192.168.31.171', 'raspberry3'), 'DW2C8B': ('192.168.31.114', 'raspberry4')}
         self.id = id
         self.quality = quality
         self.distance = distance
@@ -16,76 +18,74 @@ class UWBInformation:
         if device_info is not None:
             self.address = device_info[0]
             self.device_name = device_info[1]
+
     def __str__(self):
-        return "{"+"id:{0}, distance:{1}, quality:{2}".format(self.id,self.distance,self.quality) + "}"
+        return "{"+"id:{0}, distance:{1}, quality:{2}".format(self.id, self.distance, self.quality) + "}"
 
 
 class UWBHandler:
     def __init__(self):
+        print("start to init UWBHandler")
         self.device_id = self.__get_self_id()
         self.device_address = None
         self.adapter = pygatt.GATTToolBackend()
         self.cdev = None
+        self.__connect_device()
 
-    def detect_nodes(self,callback):
+    def detect_nodes(self, callback):
         self.call_back_action = callback
         self.set_detect_status()
-    
-    def __get_self_id(self):
-        return 'DW29B6'
 
-    def __handle_detect_response_data(self,handle:int,value:bytes)->[UWBInformation]:
+    def __get_self_id(self):
+        return 'DW2C8B'
+
+    def __handle_detect_response_data(self, handle: int, value: bytes) -> [UWBInformation]:
         """
         handle -- integer, characteristic read handle the data was received on
         value -- bytearray, the data returned in the notification, 
         the length of the data should be 2+7*(number of devices), with the 1 byte of data type, 1 byte of number of nodes, 2 bytes of node, 4 bytes of the value of distance, 1 byte of quality
         """
         length = len(value) - 2
-        print(len(value))
         if length % 7 != 0 or length == 0:
             return
         i = length / 7
         unpack_str = '=bb'
-        while i>0:
+        while i > 0:
             unpack_str += 'hib'
             i -= 1
-        unpacked_data = struct.unpack(unpack_str,value)[2:]
+        unpacked_data = struct.unpack(unpack_str, value)[2:]
         # print(unpacked_data)
         result = []
         i = int(length / 7) - 1
         while i >= 0:
-            id,distance,quality = unpacked_data[i*3:i*3+3]
+            id, distance, quality = unpacked_data[i*3:i*3+3]
             hex_id = hex(id)[2:].upper()
             while len(hex_id) < 4:
                 hex_id = '0'+hex_id
-            result.append(UWBInformation('DW'+hex_id,distance,quality,'',''))
-            i-=1
+            result.append(UWBInformation(
+                'DW'+hex_id, distance, quality, '', ''))
+            i -= 1
         for r in result:
             print(r)
         self.call_back_action(result)
-        if self.adapter is not None:
-            if self.cdev is not None:
-                self.adapter.disconnect(self.cdev)
-                self.cdev = None
-            self.adapter.stop()
         if self.call_back_action is None:
             return
         return result
 
-    def __detect_self_address(self):
+    def __connect_device(self):
+        print("start to connect device")
+        self.adapter.reset()
         ble_devices = self.adapter.scan(run_as_root=True)
-        for dev in ble_devices: 
-            print("%s %s" % (dev['name'] , dev['address']))
+        for dev in ble_devices:
+            print("%s %s" % (dev['name'], dev['address']))
             if dev['name'] == self.device_id:
                 self.device_address = dev['address']
-
-    def __connect_device(self):
         self.adapter.reset()
-        if self.device_address is None:
-            self.__detect_self_address()
         self.adapter.start()
         self.cdev = self.adapter.connect(self.device_address)
-    
+        self.cdev.exchange_mtu(128)
+        print("connect device successfully")
+
     def __disconnect_device(self):
         if self.cdev is not None:
             self.adapter.disconnect(self.cdev)
@@ -93,35 +93,29 @@ class UWBHandler:
         self.cdev = None
 
     def set_detect_status(self):
-        self.cdev = None
-        self.adapter.reset()
-        if self.device_address is None:
-            self.__detect_self_address()
-        self.adapter.start()
-        self.cdev = self.adapter.connect(self.device_address)
-        self.cdev.exchange_mtu(128)
-        ldm =  self.cdev.char_write("a02b947e-df97-4516-996a-1882521e0ead",bytearray([1]))
-        self.cdev.subscribe('003bbdf2-c634-4b3d-ab56-7ec889b89a37',callback = self.__handle_detect_response_data)
-    
+        ldm = self.cdev.char_write(
+            "a02b947e-df97-4516-996a-1882521e0ead", bytearray([1]))
+        self.cdev.subscribe('003bbdf2-c634-4b3d-ab56-7ec889b89a37',
+                            callback=self.__handle_detect_response_data)
+
+    def stop_detect_nodes(self):
+        self.cdev.unsubscribe('003bbdf2-c634-4b3d-ab56-7ec889b89a37')
+
     def set_to_anchor_mode(self):
-        if self.cdev is None:
-            self.__connect_device()
         # print(self.cdev.char_read('3f0afd88-7770-46b0-b5e7-9fc099598964'))
-        self.cdev.char_write('3f0afd88-7770-46b0-b5e7-9fc099598964',bytearray([0xdd,0xa0]))
-        self.__disconnect_device()
-        
+        self.cdev.char_write(
+            '3f0afd88-7770-46b0-b5e7-9fc099598964', bytearray([0xdd, 0xa0]))
 
     def set_to_tag_mode(self):
-        if self.cdev is None:
-            self.__connect_device()
-        self.cdev.char_write('3f0afd88-7770-46b0-b5e7-9fc099598964',bytearray([0x5d,0xa0]))
-        self.__disconnect_device()
-def __test_callback(data:[UWBInformation]):
+        self.cdev.char_write(
+            '3f0afd88-7770-46b0-b5e7-9fc099598964', bytearray([0x5d, 0xa0]))
+
+
+def __test_callback(data: [UWBInformation]):
     pass
 
-if __name__ == '__main__':
-    handler = UWBHandler()
-    handler.set_to_anchor_mode()
-    # time.sleep(2000)
 
-
+# if __name__ == '__main__':
+#     handler = UWBHandler()
+#     handler.set_to_anchor_mode()
+#     # time.sleep(2000)

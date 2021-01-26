@@ -1,7 +1,6 @@
 from enum import Enum
 from threading import Thread
 import random
-import computing_node
 import time
 
 class TaskType(Enum):
@@ -12,6 +11,7 @@ class TaskType(Enum):
 
 class ComputingTask(Thread):
     def __init__(self, task_type,action):
+        super().__init__()
         self.action = action
         if task_type == 1:
             self.task_type = TaskType.LocalComputing
@@ -30,13 +30,15 @@ class ComputingTask(Thread):
 
 class TaskGenerator(Thread):
     def __init__(self,callback):
+        super().__init__()
         self.callback = callback
     
     def run(self):
         while True:
             task = self.generate_task()
             self.callback(task)
-            time.sleep(random.randint(1,10))
+            # time.sleep(random.randint(1,10))
+            time.sleep(0.2)
 
 
     def generate_task(self)->ComputingTask:
