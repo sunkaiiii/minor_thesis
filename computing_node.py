@@ -25,7 +25,7 @@ class EdgeComputingNode(threading.Thread):
         self.task_handler = TaskHandler(queue_empty_callback=self.__handle_queue_is_empty)
         self.node_type = NodeType.Receiver
         self.receiver = ReceiverTaskHandler()
-        self.sender = SenderHandler()
+        self.sender = SenderHandler(self.task_handler)
         self.stop = False
     
     def run(self):
@@ -57,6 +57,7 @@ class EdgeComputingNode(threading.Thread):
         else:
             best_node = self.forward_table.get_the_best_node()
             if best_node is None:
+                # TODO generate as a local node
                 self.task_handler.add_new_task(task)
             else:
                 self.sender.deliever_task(task,best_node)

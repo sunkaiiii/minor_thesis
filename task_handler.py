@@ -1,4 +1,6 @@
 import threading
+from threading import Thread
+from task_generator import ComputingTask
 from task_generator import TaskGenerator
 from queue import Queue
 
