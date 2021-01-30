@@ -4,6 +4,7 @@ import random
 import time
 import subprocess
 import requests
+import datetime
 
 class TaskType(Enum):
     LocalComputing = 1
@@ -41,7 +42,7 @@ def generating_offloading_url()->str:
     ,'https://photo-collection-monash.s3.amazonaws.com/20161226_011310000_iOS.jpg'
     ,'https://photo-collection-monash.s3.amazonaws.com/20161226_011323000_iOS.jpg'
     ,'https://photo-collection-monash.s3.amazonaws.com/20161226_011329000_iOS.jpg']
-    index = random.randint(1,len(urls))
+    index = random.randint(0,len(urls)-1)
     return urls[index]
 
 class ComputingTask(Thread):
@@ -51,6 +52,7 @@ class ComputingTask(Thread):
     def __init__(self, task_type,action = None):
         super().__init__()
         self.action = action
+        self.deadline = None
         if task_type == 1:
             self.task_type = TaskType.LocalComputing
         elif task_type == 2:
