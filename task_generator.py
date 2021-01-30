@@ -49,10 +49,10 @@ class ComputingTask(Thread):
     """
     The computing task contains an executable scirpt.
     """
-    def __init__(self, task_type,action = None):
+    def __init__(self, task_type,action = None,deadline = None):
         super().__init__()
         self.action = action
-        self.deadline = None
+        self.deadline = deadline
         if task_type == 1:
             self.task_type = TaskType.LocalComputing
         elif task_type == 2:
@@ -66,9 +66,14 @@ class ComputingTask(Thread):
         else:
             raise TypeError
     def run(self):
-        # print(str(self.task_type))
-        # TODO sending the script file
         self.action()
+
+    def convert_edge_offloading_to_local_offloading(self):
+        return ComputingTask(2,self.__local_offloading_action,self.deadline)
+
+    def __local_offloading_action(self):
+        task = subprocess.Popen(['python3',self.offloading_scirpt,self.offloading_url])
+        task.wait()
 
 
 class TaskGenerator(Thread):
@@ -117,3 +122,9 @@ class TaskGenerator(Thread):
     def default_action(self):
         time.sleep(random.randint(1,10))
         pass
+
+if __name__ == '__main__':
+    task = ComputingTask(4)
+    task = task.convert_edge_offloading_to_local_offloading()
+    task.start()
+    task.join()

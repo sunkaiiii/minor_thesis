@@ -7,6 +7,7 @@ from task_cacher import CacheData
 offloading a file from the remote url
 """
 def offloading_file(url):
+    print("starting offloading url:"+url)
     r = requests.get(url,allow_redirects = True)
     id = task_cacher.create_id(url)
    

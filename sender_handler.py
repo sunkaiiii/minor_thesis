@@ -6,7 +6,6 @@ from threading import Thread
 import requests
 class SenderHandler:
     def __init__(self,task_offloading_error_action = None):
-        self.sended_tasks = {}
         self.task_offloading_error_action = task_offloading_error_action
 
     def deliever_task(self,task:ComputingTask,uwb_information:UWBInformation):
@@ -28,7 +27,7 @@ class EdgeOffloadingTaskExecutor(Thread):
 
     def run(self):
         request_url = 'http://' + self.uwb_information.address +':5000/deliever_offloading_task'
-        data = {'offloadingUrl':request_url}
+        data = {'offloadingUrl':self.task.offloading_url}
         files = {'scirpt':open(task.offloading_scirpt,'rb')}
         timeout = 3.5
         if task.deadline is not None:

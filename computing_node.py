@@ -25,7 +25,7 @@ class EdgeComputingNode(threading.Thread):
         self.task_handler = TaskHandler(queue_empty_callback=self.__handle_queue_is_empty)
         self.node_type = NodeType.Receiver
         self.receiver = ReceiverTaskHandler()
-        self.sender = SenderHandler(self.task_handler)
+        self.sender = SenderHandler(self.__handle_offloading_error)
         self.stop = False
     
     def run(self):
@@ -70,6 +70,11 @@ class EdgeComputingNode(threading.Thread):
         if self.node_type == NodeType.Sender:
             self.node_type = NodeType.Receiver
             self.__control_sender_and_receiver_service()
+
+    def __handle_offloading_error(self,task:ComputingTask,uwb_information:UWBInformation):
+        task = task.convert_edge_offloading_to_local_offloading()
+        # TODO re-send to execute queue
+        pass
 
 
     def detect_nodes(self):
