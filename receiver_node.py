@@ -1,12 +1,20 @@
+import subprocess
+from threading import Thread
 from flask import request
 from flask import Flask
+from task_handler import TaskHandler
 import requests
 import task_cacher
-import subprocess
 import os
 app = Flask(__name__)
+allow_request = False
+task_handler = None
+
 @app.route('/deliever_offloading_task',methods = ['POST'])
 def deliever_offloading_task():
+    if not allow_request or task_handler is None:
+        # TODO send http code
+        return 'asd'
     # return_url = request.form['returnUrl']
     offloading_url = request.form['offloadingUrl']
     scirpt_file = request.files['scirpt']
@@ -23,10 +31,12 @@ def deliever_offloading_task():
     r = requests.post(back_address,files = files)
     print(r.text)
     return 'ok'
-    
 
 @app.route('/receive_offloading_result',methods = ['POST'])
 def receive_offloading_result():
+    if not allow_request or task_handler is None:
+        # TODO send http code
+        return 'asd'
     offloading_file = request.files['offloading_file']
     if not os.path.isdir('offloading'):
         os.mkdir('offloading')
@@ -34,17 +44,24 @@ def receive_offloading_result():
     offloading_file.save(save_path)
     return 'ok'
 
+
 class ReceiverTaskHandler():
-    def __init__(self):
-        self.server = None
+    def __init__(self,handler:TaskHandler):
+        app.run(host='0.0.0.0',debug=True,port=5000)
+        task_handler = handler
+
     def start_service(self):
-        self.server = subprocess.Popen('python3 receiver_node.py')
-    
+        allow_request = True
+
     def stop_service(self):
-        if self.server is not None:
-            self.server.terminate()
+        allow_request = False
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',debug=True,port=5000)
+    handler = ReceiverTaskHandler(None)
+    handler.start_service()
+    import time
+    time.sleep(10)
+    handler.stop_service()
+
         
 
