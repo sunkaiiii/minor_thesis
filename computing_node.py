@@ -88,7 +88,6 @@ class EdgeComputingNode(threading.Thread):
             elif task.task_type == TaskType.EdgeOffloading:
                 task = task.convert_edge_offloading_to_local_offloading()
         self.__handle_coming_task(task,uwb_information)
-        pass
 
 
     def detect_nodes(self):

@@ -76,11 +76,12 @@ class ReceiverTaskHandler(Thread):
         allow_request = False
 
 if __name__ == '__main__':
-    handler = ReceiverTaskHandler(None)
+    executor = TaskHandler(None)
+    handler = ReceiverTaskHandler(executor)
+    handler.setDaemon(0)
+    handler.start()
     handler.start_service()
-    import time
-    time.sleep(10)
-    handler.stop_service()
+    handler.join()
 
         
 
