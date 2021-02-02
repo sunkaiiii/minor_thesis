@@ -4,7 +4,7 @@ import random
 import time
 import subprocess
 import requests
-import datetime
+from datetime import datetime,timedelta
 
 class TaskType(Enum):
     LocalComputing = 1
@@ -49,10 +49,11 @@ class ComputingTask(Thread):
     """
     The computing task contains an executable scirpt.
     """
-    def __init__(self, task_type,action = None,deadline = None):
+    def __init__(self, task_type,action = None,deadline = None,except_nodes_id = []):
         super().__init__()
         self.action = action
         self.deadline = deadline
+        self.except_nodes_id = except_nodes_id
         if task_type == 1:
             self.task_type = TaskType.LocalComputing
         elif task_type == 2:
@@ -69,12 +70,14 @@ class ComputingTask(Thread):
         self.action()
 
     def convert_edge_offloading_to_local_offloading(self):
-        return ComputingTask(2,self.__local_offloading_action,self.deadline)
+        return ComputingTask(2,self.__local_offloading_action,self.deadline,self.except_nodes_id)
 
     def __local_offloading_action(self):
         task = subprocess.Popen(['python3',self.offloading_scirpt,self.offloading_url])
         task.wait()
 
+def create_local_task(action):
+    return ComputingTask(TaskType.LocalOffloading,action)
 
 class TaskGenerator(Thread):
     """
@@ -97,16 +100,15 @@ class TaskGenerator(Thread):
 
     def generate_task(self)->ComputingTask:
         r = random.randint(1,4)
+        deadline = datetime.now()+timedelta(seconds=random.randint(10,100))
         if r == 1:
-            task = ComputingTask(r,self.local_computing_action)
+            task = ComputingTask(r,self.local_computing_action,deadline=deadline)
         elif r == 2:
-            task = ComputingTask(r,self.local_offloading_action)
+            task = ComputingTask(r,self.local_offloading_action,deadline=deadline)
         elif r == 3:
-            task = ComputingTask(r)
+            task = ComputingTask(r,deadline=deadline)
         elif r == 4:
-            task = ComputingTask(r)
-        #TODO the action would be vary depending on the type of the task
-        task = ComputingTask(r,self.default_action)
+            task = ComputingTask(r,deadline=deadline)
         return task
 
     

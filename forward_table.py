@@ -11,7 +11,7 @@ class ForwardTable:
     """
     def __init__(self):
         self.max_size = 5000
-        self.best_device = None
+        self.cloest_nodes = []
         self.table = {}
 
     def refresh_table(self, nodes: UWBInformation):
@@ -31,12 +31,14 @@ class ForwardTable:
 
     def __reload_best_device(self):
         # find the closest node according to the distance record.
-        cloest = min(self.table.items(),
+        self.cloest_nodes = sorted(self.table.items(),
                      key=lambda x: x[1][0].uwb_information.distance)
-        self.best_device = cloest[1][0]
-
-    def get_the_best_node(self):
-        return self.best_device
+        print(self.cloest_nodes)
+    def get_the_best_node(self,except_nodes = []):
+        for node in self.cloest_nodes:
+            if node[0] not in except_nodes:
+                return node[1][0]
+        return self.cloest_nodes[1][0]
 
 
 class DistanceRecord:

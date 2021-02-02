@@ -31,7 +31,7 @@ class TaskHandler(threading.Thread):
             new_task.start()
             new_task.join()
     
-    def add_new_task(self,task:TaskGenerator):
+    def add_new_task(self,task:ComputingTask):
         self.tasks.put(task)
 
     def get_queue_size(self)->int:

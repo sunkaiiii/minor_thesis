@@ -6,6 +6,7 @@ from task_handler import TaskHandler
 from receiver_node import ReceiverTaskHandler
 from task_generator import ComputingTask
 from task_generator import TaskType
+from datetime import datetime
 import task_generator
 import threading
 import asyncio
@@ -24,7 +25,7 @@ class EdgeComputingNode(threading.Thread):
         self.task_generator = task_generator.TaskGenerator(self.__handle_coming_task)
         self.task_handler = TaskHandler(queue_empty_callback=self.__handle_queue_is_empty)
         self.node_type = NodeType.Receiver
-        self.receiver = ReceiverTaskHandler()
+        self.receiver = ReceiverTaskHandler(self.task_handler)
         self.sender = SenderHandler(self.__handle_offloading_error)
         self.stop = False
     
@@ -50,12 +51,12 @@ class EdgeComputingNode(threading.Thread):
             print("start to change the node to Sender")
             
 
-    def __handle_coming_task(self,task:ComputingTask):
+    def __handle_coming_task(self,task:ComputingTask, previous_device:UWBInformation = None):
         print("task is generated")
         if task.task_type == TaskType.LocalComputing or task.task_type == TaskType.LocalOffloading:
             self.task_handler.add_new_task(task)
         else:
-            best_node = self.forward_table.get_the_best_node()
+            best_node = self.forward_table.get_the_best_node(task.except_nodes_id)
             if best_node is None:
                 # TODO generate as a local node
                 self.task_handler.add_new_task(task)
@@ -72,8 +73,11 @@ class EdgeComputingNode(threading.Thread):
             self.__control_sender_and_receiver_service()
 
     def __handle_offloading_error(self,task:ComputingTask,uwb_information:UWBInformation):
-        task = task.convert_edge_offloading_to_local_offloading()
-        # TODO re-send to execute queue
+        # TODO handle with deadline
+        task.except_nodes_id.append(uwb_information.id)
+        if (task.deadline - datetime.now()).second() < 20:
+            task = task.convert_edge_offloading_to_local_offloading()
+        self.__handle_coming_task(task,uwb_information)
         pass
 
 
@@ -88,7 +92,7 @@ class EdgeComputingNode(threading.Thread):
         for node in uwb_list:
             print(node)
         self.forward_table.refresh_table(uwb_list)
-        print(self.forward_table.best_device)
+        print(self.forward_table.get_the_best_node())
 
 
 if __name__ == '__main__':
