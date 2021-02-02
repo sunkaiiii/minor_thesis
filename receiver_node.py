@@ -1,4 +1,3 @@
-import subprocess
 from threading import Thread
 from flask import request
 from flask import Flask
@@ -62,10 +61,13 @@ def receive_offloading_result():
     return 'ok'
 
 
-class ReceiverTaskHandler():
+class ReceiverTaskHandler(Thread):
     def __init__(self,handler:TaskHandler):
-        app.run(host='0.0.0.0',debug=True,port=5000)
+        super().__init__()
         task_handler = handler
+
+    def run(self):
+        app.run(host='0.0.0.0',debug=False,port=5000)
 
     def start_service(self):
         allow_request = True

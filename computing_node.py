@@ -26,11 +26,13 @@ class EdgeComputingNode(threading.Thread):
         self.task_handler = TaskHandler(queue_empty_callback=self.__handle_queue_is_empty)
         self.node_type = NodeType.Receiver
         self.receiver = ReceiverTaskHandler(self.task_handler)
+        self.receiver.setDaemon(True)
         self.sender = SenderHandler(self.__handle_offloading_error)
         self.stop = False
     
     def run(self):
         print("start edge computing services")
+        self.receiver.start()
         self.task_generator.start()
         self.task_handler.start()
         # self.__control_sender_and_receiver_service()
@@ -58,7 +60,11 @@ class EdgeComputingNode(threading.Thread):
         else:
             best_node = self.forward_table.get_the_best_node(task.except_nodes_id)
             if best_node is None:
-                # TODO generate as a local node
+                print("No best node is found, convert to local task")
+                if task.task_type == TaskType.EdgeOffloading:
+                    task = task.convert_edge_offloading_to_local_offloading()
+                elif task.task_type == TaskType.EdgeComputing:
+                    task = task.convert_edge_offloading_to_local_offloading()
                 self.task_handler.add_new_task(task)
             else:
                 self.sender.deliever_task(task,best_node)
@@ -73,10 +79,14 @@ class EdgeComputingNode(threading.Thread):
             self.__control_sender_and_receiver_service()
 
     def __handle_offloading_error(self,task:ComputingTask,uwb_information:UWBInformation):
-        # TODO handle with deadline
+        print("One task is sending failure, the deadline sub with current time is"+(task.deadline-datetime.now()).second())
         task.except_nodes_id.append(uwb_information.id)
         if (task.deadline - datetime.now()).second() < 20:
-            task = task.convert_edge_offloading_to_local_offloading()
+            print("The failure task has been changed to local task")
+            if task.task_type == TaskType.EdgeComputing:
+                task = task.convert_edge_computing_to_local_computing()
+            elif task.task_type == TaskType.EdgeOffloading:
+                task = task.convert_edge_offloading_to_local_offloading()
         self.__handle_coming_task(task,uwb_information)
         pass
 

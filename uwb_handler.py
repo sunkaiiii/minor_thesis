@@ -2,11 +2,10 @@ import pygatt
 import time
 import struct
 import json
-from multiprocessing import Process
 
 
 class UWBInformation:
-    def __init__(self, id: str, distance: int, quality: int, address: str, device_name: str):
+    def __init__(self, id: str, distance: int, quality: int):
         """
         Currently, the id and address will combine together
         """
@@ -74,7 +73,7 @@ class UWBHandler:
             while len(hex_id) < 4:
                 hex_id = '0'+hex_id # the char with the start of 0 will be removed from the hex converting action, try to add it back.
             result.append(UWBInformation(
-                'DW'+hex_id, distance, quality, '', ''))
+                'DW'+hex_id, distance, quality))
             i -= 1
         for r in result:
             print(r)

@@ -49,11 +49,13 @@ class ComputingTask(Thread):
     """
     The computing task contains an executable scirpt.
     """
-    def __init__(self, task_type,action = None,deadline = None,except_nodes_id = []):
+    def __init__(self, task_type,action,deadline = None,except_nodes_id = [],offloading_scirpt = None, offloading_url = None):
         super().__init__()
         self.action = action
         self.deadline = deadline
         self.except_nodes_id = except_nodes_id
+        self.offloading_url = offloading_url
+        self.offloading_scirpt = offloading_scirpt
         if task_type == 1:
             self.task_type = TaskType.LocalComputing
         elif task_type == 2:
@@ -70,11 +72,18 @@ class ComputingTask(Thread):
         self.action()
 
     def convert_edge_offloading_to_local_offloading(self):
-        return ComputingTask(2,self.__local_offloading_action,self.deadline,self.except_nodes_id)
+        return ComputingTask(2,self.__local_offloading_action,self.deadline,self.except_nodes_id,offloading_scirpt=self.offloading_script,offloading_url=self.offloading_url)
+    
+    def convert_edge_computing_to_local_computing(self):
+        return ComputingTask(1,self.__local_computing_action)
 
     def __local_offloading_action(self):
         task = subprocess.Popen(['python3',self.offloading_scirpt,self.offloading_url])
         task.wait()
+
+    def __local_computing_action(self):
+        task = subprocess.Popen(['python3','computing_task.py'])
+        task.wait() 
 
 def create_local_task(action):
     return ComputingTask(TaskType.LocalOffloading,action)
@@ -95,7 +104,7 @@ class TaskGenerator(Thread):
             # time.sleep(random.randint(1,10))
 
             # the interval for generating a task may vary depending on different testing method.
-            time.sleep(0.2)
+            time.sleep(random.randint(1,20))
 
 
     def generate_task(self)->ComputingTask:
@@ -106,27 +115,26 @@ class TaskGenerator(Thread):
         elif r == 2:
             task = ComputingTask(r,self.local_offloading_action,deadline=deadline)
         elif r == 3:
-            task = ComputingTask(r,deadline=deadline)
+            task = ComputingTask(r,self.default_action,deadline=deadline)
         elif r == 4:
-            task = ComputingTask(r,deadline=deadline)
+            task = ComputingTask(r,self.default_action,deadline=deadline)
         return task
 
     
     def local_computing_action(self):
-        task = subprocess.Popen('python3 computing_task.py')
+        task = subprocess.Popen(['python3','computing_task.py'])
         task.wait()
 
     def local_offloading_action(self):
-        task = subprocess.Popen('python3 offloading_task.py')
+        task = subprocess.Popen(['python3','offloading_task.py',generating_offloading_url()])
         task.wait()
 
 
     def default_action(self):
-        time.sleep(random.randint(1,10))
         pass
 
 if __name__ == '__main__':
-    task = ComputingTask(4)
+    task = ComputingTask(4,None)
     task = task.convert_edge_offloading_to_local_offloading()
     task.start()
     task.join()

@@ -38,7 +38,10 @@ class ForwardTable:
         for node in self.cloest_nodes:
             if node[0] not in except_nodes:
                 return node[1][0]
-        return self.cloest_nodes[1][0]
+        if len(self.cloest_nodes) > 0:
+            return self.cloest_nodes[0][1][0]
+        else:
+            return None
 
 
 class DistanceRecord:
