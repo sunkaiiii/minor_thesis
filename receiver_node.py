@@ -15,11 +15,11 @@ task_handler:TaskHandler = None
 def deliever_offloading_task():
     if not allow_request or task_handler is None:
         abort(400)
-    task_handler.add_new_task()
     # return_url = request.form['returnUrl']
     offloading_url = request.form['offloadingUrl']
     scirpt_file = request.files['scirpt']
     
+    print(offloading_url)
     # check the file and offloading url are correctly sent.
     if offloading_url is None or scirpt_file is None:
         abort(400)
@@ -64,8 +64,8 @@ def receive_offloading_result():
 class ReceiverTaskHandler(Thread):
     def __init__(self,handler:TaskHandler):
         super().__init__()
+        global task_handler
         task_handler = handler
-
     def run(self):
         app.run(host='0.0.0.0',debug=False,port=5000)
 
