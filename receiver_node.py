@@ -46,6 +46,7 @@ class __OffloadingTaskHandler:
         files = {'offloading_file':open(cached_file_name,'rb')}
         back_address = 'http://' + request.remote_addr + ':5000/receive_offloading_result'
         print("send offloading result to: " + back_address)
+        app.preprocess_request()
         r = requests.post(back_address,files = files)
         print(r.text)
 
