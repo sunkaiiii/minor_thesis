@@ -89,7 +89,7 @@ class ComputingTask(Thread):
         task.wait() 
 
 def create_local_task(action):
-    return ComputingTask(TaskType.LocalOffloading,action)
+    return ComputingTask(2,action)
 
 class TaskGenerator(Thread):
     """
