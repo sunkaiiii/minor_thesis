@@ -7,6 +7,7 @@ import task_generator
 import requests
 import task_cacher
 import os
+import subprocess
 app = Flask(__name__)
 allow_request = False
 task_handler:TaskHandler = None
@@ -43,12 +44,10 @@ class __OffloadingTaskHandler:
         os.system(exec_script)
         cached_file_name = os.path.join('cache',task_cacher.create_id(self.offloading_url))
         print(cached_file_name)
-        files = {'offloading_file':open(cached_file_name,'rb')}
         back_address = 'http://' + request.remote_addr + ':5000/receive_offloading_result'
         print("send offloading result to: " + back_address)
-        app.preprocess_request()
-        r = requests.post(back_address,files = files)
-        print(r.text)
+        back_process = subprocess.Popen(['python3','send_offloading_result',back_address,cached_file_name])
+        back_process.wait()
 
 @app.route('/receive_offloading_result',methods = ['POST'])
 def receive_offloading_result():
