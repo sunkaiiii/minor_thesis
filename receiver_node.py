@@ -82,6 +82,7 @@ if __name__ == '__main__':
     allow_request = True
     handler.setDaemon(0)
     handler.start()
+    executor.start()
     handler.join()
 
         
