@@ -22,7 +22,7 @@ class UWBInformation:
             self.device_name = device_info[1]
 
     def __str__(self):
-        return "{"+"id:{0}, distance:{1}, quality:{2}".format(self.id, self.distance, self.quality) + "}"
+        return "{"+"id:{0}, distance:{1}, quality:{2}, address:{3}, device_name:{4}".format(self.id, self.distance, self.quality,self.address,self.device_name) + "}"
 
 
 class UWBHandler:

@@ -1,6 +1,6 @@
 from forward_table import ForwardTable
+from forward_table import DistanceRecord
 from uwb_handler import UWBHandler
-from uwb_handler import UWBInformation
 from sender_handler import SenderHandler
 from task_handler import TaskHandler
 from receiver_node import ReceiverTaskHandler
@@ -53,7 +53,7 @@ class EdgeComputingNode(threading.Thread):
             print("start to change the node to Sender")
             
 
-    def __handle_coming_task(self,task:ComputingTask, previous_device:UWBInformation = None):
+    def __handle_coming_task(self,task:ComputingTask, previous_information:DistanceRecord = None):
         print("task is generated")
         if task.task_type == TaskType.LocalComputing or task.task_type == TaskType.LocalOffloading:
             self.task_handler.add_new_task(task)
@@ -64,7 +64,7 @@ class EdgeComputingNode(threading.Thread):
                 if task.task_type == TaskType.EdgeOffloading:
                     task = task.convert_edge_offloading_to_local_offloading()
                 elif task.task_type == TaskType.EdgeComputing:
-                    task = task.convert_edge_offloading_to_local_offloading()
+                    task = task.convert_edge_computing_to_local_computing()
                 self.task_handler.add_new_task(task)
             else:
                 self.sender.deliever_task(task,best_node)
@@ -78,16 +78,16 @@ class EdgeComputingNode(threading.Thread):
             self.node_type = NodeType.Receiver
             self.__control_sender_and_receiver_service()
 
-    def __handle_offloading_error(self,task:ComputingTask,uwb_information:UWBInformation):
+    def __handle_offloading_error(self,task:ComputingTask,distance_record:DistanceRecord):
         print("One task is sending failure, the deadline sub with current time is"+(task.deadline-datetime.now()).second())
-        task.except_nodes_id.append(uwb_information.id)
+        task.except_nodes_id.append(distance_record.id)
         if (task.deadline - datetime.now()).second() < 20:
             print("The failure task has been changed to local task")
             if task.task_type == TaskType.EdgeComputing:
                 task = task.convert_edge_computing_to_local_computing()
             elif task.task_type == TaskType.EdgeOffloading:
                 task = task.convert_edge_offloading_to_local_offloading()
-        self.__handle_coming_task(task,uwb_information)
+        self.__handle_coming_task(task,distance_record)
 
 
     def detect_nodes(self):
@@ -97,11 +97,10 @@ class EdgeComputingNode(threading.Thread):
         self.uwb_handler.stop_detect_nodes()
         
 
-    def handle_uwb_information_callback(self,uwb_list:[UWBInformation]):
+    def handle_uwb_information_callback(self,uwb_list:[DistanceRecord]):
         for node in uwb_list:
             print(node)
         self.forward_table.refresh_table(uwb_list)
-        print(self.forward_table.get_the_best_node())
 
 
 if __name__ == '__main__':

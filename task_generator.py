@@ -63,8 +63,6 @@ class ComputingTask(Thread):
         elif task_type == 3:
             self.task_type = TaskType.EdgeComputing
         elif task_type == 4:
-            self.offloading_scirpt = 'offloading_task.py'
-            self.offloading_url = generating_offloading_url()
             self.task_type = TaskType.EdgeOffloading
         else:
             raise TypeError
@@ -72,12 +70,17 @@ class ComputingTask(Thread):
         self.action()
 
     def convert_edge_offloading_to_local_offloading(self):
-        return ComputingTask(2,self.__local_offloading_action,self.deadline,self.except_nodes_id,offloading_scirpt=self.offloading_script,offloading_url=self.offloading_url)
+        if self.task_type != TaskType.EdgeOffloading:
+            raise Exception("The task type is not Edge Offloading")
+        return ComputingTask(2,self.__local_offloading_action,self.deadline,self.except_nodes_id,offloading_scirpt=self.offloading_scirpt,offloading_url=self.offloading_url)
     
     def convert_edge_computing_to_local_computing(self):
+        if self.task_type != TaskType.EdgeComputing:
+            raise Exception("The task type if not Edge Computing")
         return ComputingTask(1,self.__local_computing_action)
 
     def __local_offloading_action(self):
+        print('converted task,offloading url:'+self.offloading_url+" offloading scirpt:"+self.offloading_scirpt)
         task = subprocess.Popen(['python3',self.offloading_scirpt,self.offloading_url])
         task.wait()
 
@@ -104,7 +107,7 @@ class TaskGenerator(Thread):
             # time.sleep(random.randint(1,10))
 
             # the interval for generating a task may vary depending on different testing method.
-            time.sleep(random.randint(1,20))
+            time.sleep(random.randint(1,1))
 
 
     def generate_task(self)->ComputingTask:
@@ -117,7 +120,7 @@ class TaskGenerator(Thread):
         elif r == 3:
             task = ComputingTask(r,self.default_action,deadline=deadline)
         elif r == 4:
-            task = ComputingTask(r,self.default_action,deadline=deadline)
+            task = ComputingTask(r,self.default_action,deadline=deadline,offloading_scirpt='offloading_task.py',offloading_url=generating_offloading_url())
         return task
 
     
