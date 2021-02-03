@@ -27,7 +27,7 @@ def deliever_offloading_task():
     scirpt_file.save(filename)
 
     # generate task for this request
-    handler = __OffloadingTaskHandler(filename,offloading_url,request.remote_addr())
+    handler = __OffloadingTaskHandler(filename,offloading_url,request.remote_addr)
     task = task_generator.create_local_task(handler.offloading_task_aciton)
     task_handler.add_new_task(task)
     return 'ok'
