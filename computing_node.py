@@ -79,9 +79,9 @@ class EdgeComputingNode(threading.Thread):
             self.__control_sender_and_receiver_service()
 
     def __handle_offloading_error(self,task:ComputingTask,distance_record:DistanceRecord):
-        print("One task is sending failure, the deadline sub with current time is"+(task.deadline-datetime.now()).second())
+        print("One task is sending failure, the deadline sub with current time is"+str((task.deadline-datetime.now()).seconds))
         task.except_nodes_id.append(distance_record.id)
-        if (task.deadline - datetime.now()).second() < 20:
+        if (task.deadline - datetime.now()).seconds < 20:
             print("The failure task has been changed to local task")
             if task.task_type == TaskType.EdgeComputing:
                 task = task.convert_edge_computing_to_local_computing()

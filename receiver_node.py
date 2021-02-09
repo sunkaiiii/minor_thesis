@@ -52,7 +52,7 @@ class __OffloadingTaskHandler:
 
 @app.route('/receive_offloading_result',methods = ['POST'])
 def receive_offloading_result():
-    if not allow_request or task_handler is None:
+    if task_handler is None:
         abort(400)
     offloading_file = request.files['offloading_file']
     if not os.path.isdir('offloading'):
