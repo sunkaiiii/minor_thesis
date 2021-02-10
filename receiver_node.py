@@ -3,6 +3,7 @@ from flask import request
 from flask import Flask
 from flask import abort
 from task_handler import TaskHandler
+from task_generator import ComputingTask
 import task_generator
 import requests
 import task_cacher
@@ -10,6 +11,7 @@ import os
 app = Flask(__name__)
 allow_request = False
 task_handler:TaskHandler = None
+multi_delievering_record = {}
 
 @app.route('/deliever_offloading_task',methods = ['POST'])
 def deliever_offloading_task():
@@ -17,6 +19,7 @@ def deliever_offloading_task():
         abort(400)
     # return_url = request.form['returnUrl']
     offloading_url = request.form['offloadingUrl']
+    uuid = request.form['uuid']
     scirpt_file = request.files['scirpt']
     
     print(offloading_url)
@@ -27,16 +30,17 @@ def deliever_offloading_task():
     scirpt_file.save(filename)
 
     # generate task for this request
-    handler = __OffloadingTaskHandler(filename,offloading_url,request.remote_addr)
+    handler = __OffloadingTaskHandler(filename,offloading_url,request.remote_addr,uuid)
     task = task_generator.create_local_task(handler.offloading_task_aciton)
     task_handler.add_new_task(task)
     return 'ok'
 
 class __OffloadingTaskHandler:
-    def __init__(self,filename:str,offloading_url:str,back_address:str):
+    def __init__(self,filename:str,offloading_url:str,back_address:str,uuid:str):
         self.filename = filename
         self.offloading_url = offloading_url
         self.back_address = back_address
+        self.uuid = uuid
 
     def offloading_task_aciton(self):
         exec_script = 'python3 '+self.filename + ' ' + self.offloading_url
@@ -45,6 +49,7 @@ class __OffloadingTaskHandler:
         cached_file_name = os.path.join('cache',task_cacher.create_id(self.offloading_url))
         print(cached_file_name)
         files = {'offloading_file':open(cached_file_name,'rb')}
+        data = {'uuid':self.uuid}
         back_address = 'http://' + self.back_address + ':5000/receive_offloading_result'
         print("send offloading result to: " + back_address)
         r = requests.post(back_address,files = files)
@@ -55,6 +60,13 @@ def receive_offloading_result():
     if task_handler is None:
         abort(400)
     offloading_file = request.files['offloading_file']
+    uuid = request.form['uuid']
+    for task in multi_delievering_record:
+        if task.uuid == uuid:
+             del multi_delievering_record[task]
+             print("multi delievering is finished")
+             break
+    # find the task with the same uuidzoom
     if not os.path.isdir('offloading'):
         os.mkdir('offloading')
     save_path = os.path.join('offloading',offloading_file.filename)
@@ -75,6 +87,12 @@ class ReceiverTaskHandler(Thread):
 
     def stop_service(self):
         allow_request = False
+
+class MultiTaskDelieveringRecord:
+    def __init__(self):
+        self.is_returned = False
+        self.delievering_count = 0
+
 
 if __name__ == '__main__':
     executor = TaskHandler(None)

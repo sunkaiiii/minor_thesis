@@ -5,6 +5,7 @@ import time
 import subprocess
 import requests
 from datetime import datetime,timedelta
+import uuid
 
 class TaskType(Enum):
     LocalComputing = 1
@@ -51,11 +52,13 @@ class ComputingTask(Thread):
     """
     def __init__(self, task_type,action,deadline = None,except_nodes_id = [],offloading_scirpt = None, offloading_url = None):
         super().__init__()
+        self.uuid = str(uuid.uuid4())
         self.action = action
         self.deadline = deadline
         self.except_nodes_id = except_nodes_id
         self.offloading_url = offloading_url
         self.offloading_scirpt = offloading_scirpt
+        self.is_multi_delievering = False
         if task_type == 1:
             self.task_type = TaskType.LocalComputing
         elif task_type == 2:
@@ -78,6 +81,11 @@ class ComputingTask(Thread):
         if self.task_type != TaskType.EdgeComputing:
             raise Exception("The task type if not Edge Computing")
         return ComputingTask(1,self.__local_computing_action)
+
+    def is_run_in_hurry(self)->bool:
+        if self.deadline is None:
+            return False
+        return (self.deadline-datetime.now()).seconds < 15
 
     def __local_offloading_action(self):
         print('converted task,offloading url:'+self.offloading_url+" offloading scirpt:"+self.offloading_scirpt)
@@ -138,6 +146,5 @@ class TaskGenerator(Thread):
 
 if __name__ == '__main__':
     task = ComputingTask(4,None)
-    task = task.convert_edge_offloading_to_local_offloading()
-    task.start()
-    task.join()
+    print(task.uuid)
+    print(type(task.uuid))

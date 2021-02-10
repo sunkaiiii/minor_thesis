@@ -27,7 +27,7 @@ class EdgeOffloadingTaskExecutor(Thread):
 
     def run(self):
         request_url = 'http://' + self.distance_record.uwb_information.address +':5000/deliever_offloading_task'
-        data = {'offloadingUrl':self.task.offloading_url}
+        data = {'offloadingUrl':self.task.offloading_url,'uuid':self.task.uuid}
         files = {'scirpt':open(self.task.offloading_scirpt,'rb')}
         timeout = 3.5
         if self.task.deadline is not None:
