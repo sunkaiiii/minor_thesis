@@ -1,9 +1,10 @@
 from datetime import datetime
 import os
 import pickle
-
+import math
 persistance_name = 'driving_sorted_data.dat'
-
+filterd_file_name = 'filted_driving_data.dat'
+filterd_data_index = [169,79,113,212,109,301,79,214,306,291,152,191,207,286]
 class CarDrivingData:
     def __init__(self,id:int,control_label:str,business_status:str,passenger_status:str,light_status:str
     ,road_status:str,break_status:str,reserved_words:str,receive_date:datetime
@@ -25,7 +26,7 @@ class CarDrivingData:
         self.star_numbers = star_numbers
 
 
-def aggregate_data()->[CarDrivingData]:
+def aggregate_data()->[[CarDrivingData]]:
     dirname = '17'
     result = []
     for filename in walk_through_dictionary(dirname):
@@ -36,6 +37,20 @@ def aggregate_data()->[CarDrivingData]:
     
 def walk_through_dictionary(dir_name:str)->[str]:
     return list(os.listdir(dir_name))
+
+def __calculate_distance(data1:CarDrivingData,data2:CarDrivingData)->float:
+    R=6373.0
+    lat1=math.radians(data1.latitude)
+    lon1=math.radians(data1.longitude)
+    lat2=math.radians(data2.latitude)
+    lon2=math.radians(data2.longitude)
+    dlon=lon2-lon1
+    dlat=lat2-lat1
+    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance=R*c
+    print("Distance: ",distance*1000)
+    return distance*1000
 
 def __read_car_driving_data(file_name:str)->[CarDrivingData]:
     f = open(file_name,'r')
@@ -77,7 +92,7 @@ def __read_car_driving_data(file_name:str)->[CarDrivingData]:
         result.append(car_info)
     return result
 
-def divide_driving_data_in_map(driving_data:[CarDrivingData])->{int:CarDrivingData}:
+def divide_driving_data_in_map(driving_data:[CarDrivingData])->{int:[CarDrivingData]}:
     result = {}
     for data in driving_data:
         if result.get(data.id) is None:
@@ -90,11 +105,40 @@ def __persistance_sorted_driving_data():
     with open(persistance_name,'wb') as persistance:
         pickle.dump(data,persistance,pickle.HIGHEST_PROTOCOL)
 
-def read_car_driving_data()->[CarDrivingData]:
+def read_car_driving_data()->[[CarDrivingData]]:
     if not os.path.exists(persistance_name):
         __persistance_sorted_driving_data()
     
     with open(persistance_name,'rb') as persistance:
         return pickle.load(persistance)
 
-print(len(read_car_driving_data()[0]))
+
+def __save_filterd_selected_data():
+    all_data = read_car_driving_data()
+    result = []
+    for index in filterd_data_index:
+        result.append(all_data[index])
+    with open(filterd_file_name,'wb') as persistance:
+        pickle.dump(result,persistance,pickle.HIGHEST_PROTOCOL)
+
+def read_filterd_selected_data()->[[CarDrivingData]]:
+    if not os.path.exists(filterd_file_name):
+        __save_filterd_selected_data()
+    with open(filterd_file_name,'rb') as persistance:
+        return pickle.load(persistance)
+
+
+
+print(len(read_filterd_selected_data()))
+
+# data = read_car_driving_data()
+
+# file_name = "gps_tract.txt"
+# with open(file_name,'w') as gps_file:
+#     for d in data:
+#         if len(d)<350:
+#             continue
+#         print(len(d))
+#         gps_file.write('type,time,latitude,longitude,speed\n')
+#         for d2 in d:
+#             gps_file.write('T,{0},{1},{2},{3}\n'.format(d2.gps_time,d2.latitude,d2.longitude,d2.speed))
