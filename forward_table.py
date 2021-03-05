@@ -1,7 +1,6 @@
 from datetime import datetime
 from uwb_handler import UWBInformation
 
-
 class DistanceRecord:
     def __init__(self, id, uwb_information: UWBInformation):
         self.id = id
@@ -10,6 +9,8 @@ class DistanceRecord:
 
     def __str__(self):
         return str(self.id)+","+","+str(self.record_time) + ','+str(self.uwb_information)
+
+
 
 class ForwardTable:
     """

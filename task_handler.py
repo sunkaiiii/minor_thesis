@@ -18,6 +18,7 @@ class TaskHandler(threading.Thread):
         self.callback = queue_empty_callback
         self.__max_tasks = max_tasks
 
+
     def run(self):
         """
         The thread will run forever until the program dead.
