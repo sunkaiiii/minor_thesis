@@ -22,9 +22,9 @@ class EdgeComputingNode(threading.Thread):
     def __init__(self):
         super().__init__()
         all_filted_data = read_filterd_selected_data()
-        self.gps_handler = GPSInformationHandler(all_filted_data[2])
+        self.gps_handler = GPSInformationHandler(all_filted_data[91])
         self.other_gps_nodes = []
-        all_filted_data = all_filted_data[3:]
+        del all_filted_data[91]
         self.other_gps_nodes = [GPSInformationHandler(d) for d in all_filted_data]
         self.forward_table = GPSForwardTable()
         self.task_generator = task_generator_gps.TaskGenerator(
@@ -41,7 +41,6 @@ class EdgeComputingNode(threading.Thread):
         self.task_handler.start()
         self.detect_nodes()
         # self.__control_sender_and_receiver_service()
-        self.task_generator.join()
 
     def __handle_coming_task(self, task: ComputingTask):
         print("task is generated")

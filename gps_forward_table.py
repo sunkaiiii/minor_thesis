@@ -28,7 +28,7 @@ class GPSForwardTable:
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         distance = R*c
         if distance*1000 <1000:
-            print("Distance: ", distance*1000)
+            print("Self id: {0}, car id:{1}, distance:{2}".format(data1.id,data2.id,distance*1000))
         return distance*1000
 
     def refresh_table(self, self_node:CarDrivingData,nodes:[CarDrivingData]):
