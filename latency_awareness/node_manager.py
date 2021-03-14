@@ -9,7 +9,6 @@ from threading import Thread
 class ClientNode(Thread):
     def __init__(self,job_manager:JobManager):
         super().__init__()
-        self.callback = callback
         self.timer = datetime.now()
         self.client = socket.socket(socket.AF_INET,socket.SOCK_DGRAM,socket.IPPROTO_UDP)
         self.client.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEPORT,1)
@@ -23,7 +22,6 @@ class ClientNode(Thread):
         self.client.bind(("",5055))
         while True:
             data,addr = self.client.recvfrom(1024)
-            time_offset = (datetime.now()-self.timer).microseconds
             print("received message: {0} from {1}".format(data,addr))
             address = addr[0]
             port = 5056
