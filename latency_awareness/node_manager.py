@@ -3,6 +3,19 @@ import socket
 import time
 from datetime import date, datetime
 from threading import Thread
+from task_generator import ComputingTask
+
+script_file_recv_port = 5057
+
+
+class NodeInformation:
+    def __init__(self, address: str, available_slots: int, latency: int):
+        self.address = address
+        self.available_slots = available_slots
+        self.latency = latency
+
+    def __str__(self) -> str:
+        return 'address:{0}, available_slots:{1}, latency:{2}'.format(self.address, self.available_slots, self.latency)
 
 
 class ClientNode(Thread):
@@ -16,6 +29,26 @@ class ClientNode(Thread):
 
     def reset_timer(self):
         self.timer = datetime.now()
+
+    def send_task(self, task: ComputingTask, node: NodeInformation):
+        worker = self.TaskWorker(task, node)
+        worker.start()
+
+    class TaskWorker(Thread):
+        def __init__(self, task: ComputingTask, node: NodeInformation):
+            super().__init__()
+            self.task = task
+            self.node = node
+
+        def run(self) -> None:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                with open(self.task.script_name, 'rb') as f:
+                    s.connect((self.node.address, script_file_recv_port))
+                    buffer_size = 2048
+                    bytes = f.read(buffer_size)
+                    while bytes:
+                        s.send(bytes)
+                        bytes = f.read(buffer_size)
 
     def run(self):
         self.client.bind(("", 5055))
@@ -72,15 +105,25 @@ class ServerNode(Thread):
                 print(node_information)
                 self.new_node_callback(node_information)
 
+    class ScriptReceiver(Thread):
+        def __init__(self):
+            super().__init__()
+            self.file_receiver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-class NodeInformation:
-    def __init__(self, address: str, available_slots: int, latency: int):
-        self.address = address
-        self.available_slots = available_slots
-        self.latency = latency
-
-    def __str__(self) -> str:
-        return 'address:{0}, available_slots:{1}, latency:{2}'.format(self.address, self.available_slots, self.latency)
+        def run(self) -> None:
+            self.file_receiver.bind(('0.0.0.0', script_file_recv_port))
+            self.file_receiver.listen()
+            while True:
+                # TODO IO multiplexing
+                conn, addr = self.file_receiver.accept()
+                buffer_size = 2048
+                with open('scirpt_' + addr[0], 'wb') as f:
+                    while True:
+                        data = self.file_receiver.recv(buffer_size)
+                        while data:
+                            f.write(data)
+                            data = self.file_receiver.recv(buffer_size)
+                # TODO new script call back
 
 
 class NodeManger:
@@ -96,9 +139,8 @@ class NodeManger:
         self.nodes = []
         self.server.send_heart_beat()
 
-    def send_task_to_best_node(self, task:ComputingTask):
-        # TODO send the file to the node
-        pass
+    def send_task_to_best_node(self, task: ComputingTask, node: NodeInformation):
+        self.client.send_task(task, node)
 
     def on_new_node_coming(self, node: NodeInformation):
         self.nodes[node.address] = node

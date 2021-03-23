@@ -5,30 +5,19 @@ import time
 from datetime import datetime, timedelta
 
 
-class ComputingTask(Thread):
+class ComputingTask:
     """
     The computing task contains an executable scirpt.
     """
 
-    def __init__(self, id, deadline=None, except_nodes_id=[]):
+    def __init__(self, id, script_name,deadline=None, except_nodes_id=[]):
         super().__init__()
         self.id = id
+        self.script_name = script_name
         self.deadline = deadline
         self.except_nodes_id = except_nodes_id
         self.is_multi_delievering = False
-        self.offloading_size = random.randint(100, 2000)
 
-    def run(self):
-        progress = 0
-        while progress < self.offloading_size:
-            if progress > 0:
-                time.sleep(1)
-            progress += random.randint(100, 3000)
-
-    def is_run_in_hurry(self) -> bool:
-        if self.deadline is None:
-            return False
-        return (self.deadline - datetime.now()).seconds < 15
 
 
 class TaskGenerator(Thread):
