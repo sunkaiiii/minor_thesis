@@ -1,6 +1,7 @@
 from job_manager import JobManager
 import socket
 import time
+import selectors
 from datetime import date, datetime
 from threading import Thread
 from task_generator import ComputingTask
@@ -66,7 +67,7 @@ class ClientNode(Thread):
 
 
 class ServerNode(Thread):
-    def __init__(self, new_node_callback):
+    def __init__(self, new_node_callback, job_manager:JobManager):
         super().__init__()
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.handler = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -74,6 +75,7 @@ class ServerNode(Thread):
         self.server.settimeout(1)
         self.time = datetime.now()
         self.new_node_callback = new_node_callback
+        self.script_receiver = self.ScriptReceiver(job_manager)
 
     def __send_heart_beat(self):
         self.time = datetime.now()
@@ -86,6 +88,9 @@ class ServerNode(Thread):
         sender.start()
 
     def run(self):
+        # Start to wait for receiving script files
+        self.script_receiver.start()
+
         self.handler.bind(('0.0.0.0', 5056))
         self.handler.listen()
         while True:
@@ -95,9 +100,9 @@ class ServerNode(Thread):
                 if not data:
                     continue
                 time_offset = (datetime.now() - self.time).microseconds
-                splited_data = data.decode().split(' ')
-                available_slots = int(splited_data[0])
-                timestamp = str(splited_data[1])
+                split_data = data.decode().split(' ')
+                available_slots = int(split_data[0])
+                timestamp = str(split_data[1])
                 address = addr[0]
                 if timestamp != str(self.time.timestamp()):
                     continue
@@ -106,30 +111,40 @@ class ServerNode(Thread):
                 self.new_node_callback(node_information)
 
     class ScriptReceiver(Thread):
-        def __init__(self):
+        def __init__(self,job_manager:JobManager):
             super().__init__()
             self.file_receiver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.selector = selectors.DefaultSelector()
+            self.connection_map = {}
+            self.job_manager = job_manager
 
         def run(self) -> None:
             self.file_receiver.bind(('0.0.0.0', script_file_recv_port))
             self.file_receiver.listen()
             while True:
-                # TODO IO multiplexing
                 conn, addr = self.file_receiver.accept()
-                buffer_size = 2048
-                with open('scirpt_' + addr[0], 'wb') as f:
-                    while True:
-                        data = self.file_receiver.recv(buffer_size)
-                        while data:
-                            f.write(data)
-                            data = self.file_receiver.recv(buffer_size)
-                # TODO new script call back
+                conn.setblocking(False)
+                self.selector.register(conn, selectors.EVENT_READ, self.read_script)
+                self.connection_map[conn] = addr
+
+        def read_script(self, conn, mask):
+            addr = self.connection_map[conn]
+            buffer_size = 2048
+            file_name = 'script'+addr[0]+'.py'
+            with open(file_name, 'wb') as f:
+                data = self.file_receiver.recv(buffer_size)
+                while data:
+                    f.write(data)
+                    data = self.file_receiver.recv(buffer_size)
+                conn.close()
+                del self.connection_map[conn]
+            self.job_manager.add_task(ComputingTask(0,file_name))
 
 
 class NodeManger:
     def __init__(self, job_manager: JobManager):
         self.client = ClientNode(job_manager)
-        self.server = ServerNode(self.on_new_node_coming)
+        self.server = ServerNode(self.on_new_node_coming,job_manager)
         self.job_manager = job_manager
         self.nodes = {}
         self.server.start()

@@ -20,4 +20,6 @@ class EdgeNode(Thread):
         if best_node is None:
             self.job_manager.add_task(task)
             return
+        # Send node to the best node
+        self.node_manager.send_task_to_best_node(task,best_node)
 
