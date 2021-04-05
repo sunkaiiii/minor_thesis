@@ -44,12 +44,15 @@ class ClientNode(Thread):
         def run(self) -> None:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 with open(self.task.script_name, 'rb') as f:
+                    print('starting send task to ' + self.node.address + ' ,open socket...')
                     s.connect((self.node.address, script_file_recv_port))
+                    print('scoket open, sending data')
                     buffer_size = 2048
                     bytes = f.read(buffer_size)
                     while bytes:
                         s.send(bytes)
                         bytes = f.read(buffer_size)
+                    print('sending data over, close socket')
 
     def run(self):
         self.client.bind(("", 5055))
@@ -67,7 +70,7 @@ class ClientNode(Thread):
 
 
 class ServerNode(Thread):
-    def __init__(self, new_node_callback, job_manager:JobManager):
+    def __init__(self, new_node_callback, job_manager: JobManager):
         super().__init__()
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.handler = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -111,40 +114,56 @@ class ServerNode(Thread):
                 self.new_node_callback(node_information)
 
     class ScriptReceiver(Thread):
-        def __init__(self,job_manager:JobManager):
+        def __init__(self, job_manager: JobManager):
             super().__init__()
             self.file_receiver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.selector = selectors.DefaultSelector()
             self.connection_map = {}
             self.job_manager = job_manager
-
-        def run(self) -> None:
             self.file_receiver.bind(('0.0.0.0', script_file_recv_port))
             self.file_receiver.listen()
+            self.file_receiver.setblocking(False)
+            self.selector.register(self.file_receiver, selectors.EVENT_READ, self.accept)
+
+        def accept(self, sock, mask):
+            print('receive task offloading request')
+            conn, addr = sock.accept()
+            self.connection_map[conn] = addr
+            conn.setblocking(False)
+            self.selector.register(conn, selectors.EVENT_READ, self.read_script)
+
+        def run(self) -> None:
             while True:
-                conn, addr = self.file_receiver.accept()
-                conn.setblocking(False)
-                self.selector.register(conn, selectors.EVENT_READ, self.read_script)
-                self.connection_map[conn] = addr
+                events = self.selector.select()
+                for key, mask in events:
+                    # get the callback
+                    callback = key.data
+                    # calling callbak
+                    callback(key.fileobj, mask)
 
         def read_script(self, conn, mask):
             addr = self.connection_map[conn]
             buffer_size = 2048
-            file_name = 'script'+addr[0]+'.py'
-            with open(file_name, 'wb') as f:
-                data = self.file_receiver.recv(buffer_size)
-                while data:
-                    f.write(data)
-                    data = self.file_receiver.recv(buffer_size)
-                conn.close()
-                del self.connection_map[conn]
-            self.job_manager.add_task(ComputingTask(0,file_name))
+            file_name = 'script' + addr[0] + '.py'
+            print('receiving data...')
+            try:
+                with open(file_name, 'wb') as f:
+                    data = conn.recv(buffer_size)
+                    while data:
+                        f.write(data)
+                        data = conn.recv(buffer_size)
+                    conn.close()
+                    del self.connection_map[conn]
+                print('receive file over, start executing')
+                self.job_manager.add_task(ComputingTask(0, file_name))
+            finally:
+                self.selector.unregister(conn)
 
 
 class NodeManger:
     def __init__(self, job_manager: JobManager):
         self.client = ClientNode(job_manager)
-        self.server = ServerNode(self.on_new_node_coming,job_manager)
+        self.server = ServerNode(self.on_new_node_coming, job_manager)
         self.job_manager = job_manager
         self.nodes = {}
         self.server.start()

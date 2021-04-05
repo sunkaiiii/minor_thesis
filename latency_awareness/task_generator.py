@@ -38,7 +38,8 @@ class TaskGenerator(Thread):
             # time.sleep(random.randint(1,10))
 
             # the interval for generating a task may vary depending on different testing method.
-            time.sleep(random.randint(1, 400) / 1000.0)
+            # time.sleep(random.randint(1, 400) / 1000.0)
+            time.sleep(random.randint(1, 2) / 1000.0)
             if self.task_id == 2000:
                 break
 
