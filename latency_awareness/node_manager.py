@@ -24,7 +24,7 @@ class ClientNode(Thread):
         super().__init__()
         self.timer = datetime.now()
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        # self.client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.job_manager = job_manager
 
@@ -151,7 +151,7 @@ class NodeManger:
         self.client.start()
 
     def send_heart_beat(self):
-        self.nodes = []
+        self.nodes = {}
         self.server.send_heart_beat()
 
     def send_task_to_best_node(self, task: ComputingTask, node: NodeInformation):
@@ -163,7 +163,7 @@ class NodeManger:
     def get_best_node(self, except_nodes=None) -> NodeInformation:
         if except_nodes is None:
             except_nodes = []
-        sorted_nodes = sorted(self.nodes.values(), key=lambda x: x.lantecy, reverse=True)
+        sorted_nodes = sorted(self.nodes.values(), key=lambda x: x.latency, reverse=True)
         for node in sorted_nodes:
             if node not in except_nodes:
                 return node

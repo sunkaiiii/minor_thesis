@@ -18,6 +18,8 @@ class JobManager(Thread):
         self.task_queue.put(task)
 
     def run(self):
-        task = self.task_queue.get()
-        file_name = task.script_name
-        subprocess.Popen('python3', file_name).wait()
+        while True:
+            task = self.task_queue.get()
+            file_name = task.script_name
+            print(file_name)
+            subprocess.Popen(['python', file_name]).wait()
