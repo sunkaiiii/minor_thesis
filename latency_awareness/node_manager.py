@@ -88,9 +88,11 @@ class ServerNode(Thread):
         self.server.close()
         self.handler.close()
 
-    def __get_local_ip_address(self) -> str:
+    @staticmethod
+    def __get_local_ip_address() -> str:
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
+        print(local_ip)
         return local_ip
 
     def __send_heart_beat(self):
