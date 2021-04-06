@@ -28,6 +28,9 @@ class ClientNode(Thread):
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.job_manager = job_manager
 
+    def __del__(self):
+        self.client.close()
+
     def reset_timer(self):
         self.timer = datetime.now()
 
@@ -79,6 +82,16 @@ class ServerNode(Thread):
         self.time = datetime.now()
         self.new_node_callback = new_node_callback
         self.script_receiver = self.ScriptReceiver(job_manager)
+        self.self_address = self.__get_local_ip_address()
+
+    def __del__(self):
+        self.server.close()
+        self.handler.close()
+
+    def __get_local_ip_address(self) -> str:
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        return local_ip
 
     def __send_heart_beat(self):
         self.time = datetime.now()
@@ -99,6 +112,9 @@ class ServerNode(Thread):
         while True:
             conn, addr = self.handler.accept()
             with conn:
+                address = addr[0]
+                if address == self.self_address:
+                    continue
                 data = conn.recv(1024)
                 if not data:
                     continue
@@ -124,6 +140,12 @@ class ServerNode(Thread):
             self.file_receiver.listen()
             self.file_receiver.setblocking(False)
             self.selector.register(self.file_receiver, selectors.EVENT_READ, self.accept)
+
+        def __del__(self):
+            try:
+                self.file_receiver.close()
+            except:
+                print('close socket error')
 
         def accept(self, sock, mask):
             print('receive task offloading request')
@@ -184,7 +206,7 @@ class NodeManger:
             except_nodes = []
         sorted_nodes = sorted(self.nodes.values(), key=lambda x: x.latency, reverse=True)
         for node in sorted_nodes:
-            if node not in except_nodes:
+            if node not in except_nodes and node.available_slots > 0:
                 return node
 
 

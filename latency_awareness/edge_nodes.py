@@ -25,8 +25,7 @@ class EdgeNode(Thread):
             self.job_manager.add_task(task)
             return
         best_node = self.node_manager.get_best_node()
-        print('try to send to best node')
-        print(best_node)
+        print('try to send to best node' + str(best_node))
         if best_node is None:
             print('No best node found')
             self.job_manager.add_task(task)
