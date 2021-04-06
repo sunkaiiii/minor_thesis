@@ -215,6 +215,8 @@ class NodeManger:
 
 
 if __name__ == '__main__':
-    node = NodeManger(JobManager())
+    job_manager = JobManager()
+    job_manager.start()
+    node = NodeManger(job_manager)
     node.send_heart_beat()
     time.sleep(5)
