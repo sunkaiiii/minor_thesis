@@ -30,6 +30,7 @@ class ClientNode(Thread):
 
     def __del__(self):
         self.client.close()
+        print('client closed')
 
     def reset_timer(self):
         self.timer = datetime.now()
@@ -87,6 +88,7 @@ class ServerNode(Thread):
     def __del__(self):
         self.server.close()
         self.handler.close()
+        print('server closed')
 
     @staticmethod
     def __get_local_ip_address() -> str:
@@ -186,12 +188,19 @@ class ServerNode(Thread):
                 self.selector.unregister(conn)
 
 
-class NodeManger:
+class NodeManger(Thread):
     def __init__(self, job_manager: JobManager):
+        super().__init__()
         self.client = ClientNode(job_manager)
         self.server = ServerNode(self.on_new_node_coming, job_manager)
         self.job_manager = job_manager
         self.nodes = {}
+
+    def stop_service(self):
+        del self.client
+        del self.server
+
+    def run(self) -> None:
         self.server.start()
         self.client.start()
 

@@ -12,12 +12,18 @@ class EdgeNode(Thread):
         self.task_generator = TaskGenerator(self.__handle_coming_task)
 
     def run(self) -> None:
+        self.node_manager.start()
         self.job_manager.start()
         self.task_generator.start()
-        while True:
+        while not self.task_generator.generate_over:
             print('send heart beat')
             self.node_manager.send_heart_beat()
             time.sleep(1)
+        print('stopping service')
+        self.node_manager.stop_service()
+        print('wait for job manager')
+        while self.job_manager.available_slots() != self.job_manager.capacity:
+            time.sleep(0.5)
 
     def __handle_coming_task(self, task: ComputingTask):
         print("task comes")
