@@ -27,6 +27,14 @@ class ClientNode(Thread):
         # self.client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.job_manager = job_manager
+        self.BROAD_CAST_IONFOMRATION = '1'
+        self.FINISHED_INFORMATION = '2'
+        self.broadcast_receiver_selectors = selectors.DefaultSelector()
+        self.finish = False
+    def stop_service(self):
+        self.client.close()
+        self.broadcast_receiver_selectors.close()
+        print('client closed')
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.client.close()
@@ -35,32 +43,56 @@ class ClientNode(Thread):
     def reset_timer(self):
         self.timer = datetime.now()
 
-    def send_task(self, task: ComputingTask, node: NodeInformation):
-        worker = self.TaskWorker(task, node)
+    def send_task(self, task: ComputingTask, node: NodeInformation, error_callback=None):
+        worker = self.TaskWorker(task, node, error_callback)
         worker.start()
 
+    def send_task_execution_finish(self, task: ComputingTask, addr: str):
+        if addr is None:
+            return
+
+    class TaskFinishWorker(Thread):
+        def __init__(self, task: ComputingTask, addr: str):
+            self.task = task
+            self.addr = addr
+
+        def run(self) -> None:
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.connect((self.addr, 5056))
+                    data = '2' + ' ' + str(self.task.id) + str(datetime.now())
+                    s.send(data.encode())
+            except:
+                print("send remote task finished error")
+
     class TaskWorker(Thread):
-        def __init__(self, task: ComputingTask, node: NodeInformation):
+        def __init__(self, task: ComputingTask, node: NodeInformation, error_callback=None):
             super().__init__()
             self.task = task
             self.node = node
+            self.error_callback = error_callback
 
+        # todo selector write client
         def run(self) -> None:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                with open(self.task.script_name, 'rb') as f:
-                    print('starting send task to ' + self.node.address + ' ,open socket...')
-                    s.connect((self.node.address, script_file_recv_port))
-                    print('scoket open, sending data')
-                    buffer_size = 2048
-                    bytes = f.read(buffer_size)
-                    while bytes:
-                        s.send(bytes)
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    with open(self.task.script_name, 'rb') as f:
+                        print('starting send task to ' + self.node.address + ' ,open socket...')
+                        s.connect((self.node.address, script_file_recv_port))
+                        print('scoket open, sending data')
+                        buffer_size = 2048
                         bytes = f.read(buffer_size)
-                    print('sending data over, close socket')
+                        while bytes:
+                            s.send(bytes)
+                            bytes = f.read(buffer_size)
+                        print('sending data over, close socket')
+            except:
+                if self.error_callback is not None:
+                    self.error_callback(self.task, self.node, self)
 
     def run(self):
         self.client.bind(("", 5055))
-        while True:
+        while not self.finish:
             data, addr = self.client.recvfrom(1024)
             print("received message: {0} from {1}".format(data, addr))
             address = addr[0]
@@ -68,13 +100,15 @@ class ClientNode(Thread):
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 available_slots = self.job_manager.available_slots()
                 timestamp = data.decode()
-                result = str(available_slots) + ' ' + str(timestamp)
+                result = self.BROAD_CAST_IONFOMRATION + ' ' + str(available_slots) + ' ' + str(timestamp)
                 s.connect((address, port))
                 s.sendall(result.encode())
 
 
+
+
 class ServerNode(Thread):
-    def __init__(self, new_node_callback, job_manager: JobManager):
+    def __init__(self, new_node_callback, job_manager: JobManager, on_receive_finished_task_information_callback):
         super().__init__()
         self.data_receive_selector = selectors.DefaultSelector()
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -86,6 +120,17 @@ class ServerNode(Thread):
         self.script_receiver = self.ScriptReceiver(job_manager)
         self.self_address = self.__get_local_ip_address()
         self.address_map = {}
+        self.on_receive_finished_task_information_callback=on_receive_finished_task_information_callback
+        self.finish = False
+
+
+    def stop_server(self):
+        self.server.close()
+        self.handler.close()
+        self.data_receive_selector.close()
+        self.script_receiver.stop_receving()
+        self.script_receiver.selector.close()
+        print('server closed')
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.server.close()
@@ -118,7 +163,7 @@ class ServerNode(Thread):
         self.handler.listen()
         self.handler.setblocking(False)
         self.data_receive_selector.register(self.handler, selectors.EVENT_READ, self.accept_information)
-        while True:
+        while not self.finish:
             events = self.data_receive_selector.select()
             for key, mask in events:
                 callback = key.data
@@ -156,19 +201,32 @@ class ServerNode(Thread):
             data = conn.recv(1024)
             if not data:
                 return
-            time_offset = (datetime.now() - self.time).microseconds
+
             split_data = data.decode().split(' ')
-            available_slots = int(split_data[0])
-            timestamp = str(split_data[1])
-            if timestamp != str(self.time.timestamp()):
-                return
-            node_information = NodeInformation(addr, available_slots, time_offset)
-            print(node_information)
-            self.new_node_callback(node_information)
+            if split_data[0] == '1':
+                self.__convert_broadcast_info(addr, split_data[1:])
+            elif split_data[0] == '2':
+                self.__convert_finished_information(split_data[1:])
+
         finally:
             conn.close()
             del self.address_map[conn]
             self.data_receive_selector.unregister(conn)
+
+    def __convert_broadcast_info(self, addr: str, split_data: [str]):
+        time_offset = (datetime.now() - self.time).microseconds
+        available_slots = int(split_data[0])
+        timestamp = str(split_data[1])
+        if timestamp != str(self.time.timestamp()):
+            return
+        node_information = NodeInformation(addr, available_slots, time_offset)
+        print(node_information)
+        self.new_node_callback(node_information)
+
+    def __convert_finished_information(self,split_data:[str]):
+        task_id=split_data[0]
+        finished_time = datetime.fromisoformat(split_data[1])
+        self.on_receive_finished_task_information_callback(int(task_id),finished_time)
 
     class ScriptReceiver(Thread):
         def __init__(self, job_manager: JobManager):
@@ -181,7 +239,11 @@ class ServerNode(Thread):
             self.file_receiver.listen()
             self.file_receiver.setblocking(False)
             self.selector.register(self.file_receiver, selectors.EVENT_READ, self.accept)
+            self.task_address_map = {}
+            self.finish=False
 
+        def stop_receving(self):
+            self.file_receiver.close()
         def __exit__(self, exc_type, exc_val, exc_tb):
             try:
                 self.file_receiver.close()
@@ -196,13 +258,19 @@ class ServerNode(Thread):
             self.selector.register(conn, selectors.EVENT_READ, self.read_script)
 
         def run(self) -> None:
-            while True:
+            while not self.finish:
                 events = self.selector.select()
                 for key, mask in events:
                     # get the callback
                     callback = key.data
                     # calling callbak
                     callback(key.fileobj, mask)
+
+        def get_original_address(self, task):
+            return self.task_address_map[task]
+
+        def del_task_recotd(self, task):
+            del self.task_address_map[task]
 
         def read_script(self, conn, mask):
             addr = self.connection_map[conn]
@@ -218,22 +286,26 @@ class ServerNode(Thread):
                     conn.close()
                     del self.connection_map[conn]
                 print('receive file over, start executing')
-                self.job_manager.add_task(ComputingTask(0, file_name))
+                task = ComputingTask(0, file_name, remote_task=True)
+                self.task_address_map[task] = addr
+                self.job_manager.add_task(task)
             finally:
                 self.selector.unregister(conn)
 
 
 class NodeManger(Thread):
-    def __init__(self, job_manager: JobManager):
+    def __init__(self, job_manager: JobManager,on_receive_finished_task_information_callback=None):
         super().__init__()
         self.client = ClientNode(job_manager)
-        self.server = ServerNode(self.on_new_node_coming, job_manager)
+        self.server = ServerNode(self.on_new_node_coming, job_manager,on_receive_finished_task_information_callback)
         self.job_manager = job_manager
+        self.job_manager.remote_task_execution_finished_callback = self.__on_remote_task_execution_over
         self.nodes = {}
 
+
     def stop_service(self):
-        del self.client
-        del self.server
+        self.client.stop_service()
+        self.server.stop_server()
         self.client = None
         self.server = None
 
@@ -245,8 +317,8 @@ class NodeManger(Thread):
         self.nodes = {}
         self.server.send_heart_beat()
 
-    def send_task_to_best_node(self, task: ComputingTask, node: NodeInformation):
-        self.client.send_task(task, node)
+    def send_task_to_best_node(self, task: ComputingTask, node: NodeInformation, error_callback=None):
+        self.client.send_task(task, node, error_callback)
 
     def on_new_node_coming(self, node: NodeInformation):
         self.nodes[node.address] = node
@@ -258,6 +330,11 @@ class NodeManger(Thread):
         for node in sorted_nodes:
             if node not in except_nodes and node.available_slots > 0:
                 return node
+
+    def __on_remote_task_execution_over(self, task: ComputingTask):
+        addr = self.server.script_receiver.get_original_address(task)
+        self.server.script_receiver.del_task_recotd(task)
+        self.client.send_task_execution_finish(task, addr)
 
 
 if __name__ == '__main__':

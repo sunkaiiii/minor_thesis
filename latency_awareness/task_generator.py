@@ -10,13 +10,21 @@ class ComputingTask:
     The computing task contains an executable scirpt.
     """
 
-    def __init__(self, id, script_name, deadline=None, except_nodes_id=[]):
+    def __init__(self, id, script_name, deadline=None, except_nodes_id=[],remote_task=False):
         super().__init__()
         self.id = id
         self.script_name = script_name
         self.deadline = deadline
         self.except_nodes_id = except_nodes_id
+        self.generated_time = datetime.now()
         self.is_multi_delievering = False
+        self.force_local_handling = False
+        self.remote_task = remote_task
+
+    def is_run_in_hurry(self) -> bool:
+        if self.deadline is None:
+            return False
+        return (self.deadline - datetime.now()).seconds < 10
 
 
 class TaskGenerator(Thread):
@@ -32,7 +40,7 @@ class TaskGenerator(Thread):
         self.generate_over = False
 
     def run(self):
-        while self.task_id < 2000:
+        while self.task_id < 20:
             t = self.generate_task()
             self.task_id += 1
             self.callback(t)

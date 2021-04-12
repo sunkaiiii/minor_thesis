@@ -6,10 +6,13 @@ import subprocess
 
 
 class JobManager(Thread):
-    def __init__(self):
+    def __init__(self, log_callback = None):
         super().__init__()
         self.capacity = multiprocessing.cpu_count() * 2
         self.task_queue = Queue(self.capacity)
+        self.log_callback = log_callback
+        self.remote_task_execution_finished_callback = None
+        self.finished = False
 
     def available_slots(self) -> int:
         return self.capacity - self.task_queue.qsize()
@@ -21,12 +24,19 @@ class JobManager(Thread):
         pass
 
     def run(self):
-        while True:
-            task = self.task_queue.get()
-            file_name = task.script_name
-            print('start_executing:'+file_name)
-            subprocess.Popen(['python', file_name]).wait()
-
+        while not self.finished or self.available_slots()!=self.capacity:
+            try:
+                task = self.task_queue.get(timeout=1)
+                file_name = task.script_name
+                print('start_executing:'+file_name)
+                subprocess.Popen(['python', file_name]).wait()
+                if self.log_callback is not None:
+                    self.log_callback(task)
+                if self.remote_task_execution_finished_callback is not None and task.remote_task:
+                    self.remote_task_execution_finished_callback(task)
+            except:
+                continue
+        print('job finished')
 
 if __name__ == '__main__':
     from task_generator import ComputingTask

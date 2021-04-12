@@ -8,12 +8,12 @@ class ExperimentHandler:
         self.experiment_name = 'latency_' + datetime.now().strftime('%Y_%m_%d%H_%M_%S')
         self.log_file = open(self.experiment_name + '.csv', 'w', newline='')
         self.spamwriter = csv.writer(self.log_file, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        self.ssss = csv.writer(self.log_file, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
 
-    def __del__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self.spamwriter = None
         self.log_file.close()
+
 
     def start_experiment(self):
         edge_node = EdgeNode(self.log_file)
