@@ -76,6 +76,7 @@ class ClientNode(Thread):
 class ServerNode(Thread):
     def __init__(self, new_node_callback, job_manager: JobManager):
         super().__init__()
+        self.data_receive_selector = selectors.DefaultSelector()
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.handler = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -84,6 +85,7 @@ class ServerNode(Thread):
         self.new_node_callback = new_node_callback
         self.script_receiver = self.ScriptReceiver(job_manager)
         self.self_address = self.__get_local_ip_address()
+        self.address_map = {}
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.server.close()
@@ -112,28 +114,62 @@ class ServerNode(Thread):
     def run(self):
         # Start to wait for receiving script files
         self.script_receiver.start()
-
         self.handler.bind(('0.0.0.0', 5056))
         self.handler.listen()
+        self.handler.setblocking(False)
+        self.data_receive_selector.register(self.handler, selectors.EVENT_READ, self.accept_information)
         while True:
-            conn, addr = self.handler.accept()
-            with conn:
-                address = addr[0]
-                if address == self.self_address:
-                    continue
-                data = conn.recv(1024)
-                if not data:
-                    continue
-                time_offset = (datetime.now() - self.time).microseconds
-                split_data = data.decode().split(' ')
-                available_slots = int(split_data[0])
-                timestamp = str(split_data[1])
-                address = addr[0]
-                if timestamp != str(self.time.timestamp()):
-                    continue
-                node_information = NodeInformation(address, available_slots, time_offset)
-                print(node_information)
-                self.new_node_callback(node_information)
+            events = self.data_receive_selector.select()
+            for key, mask in events:
+                callback = key.data
+                callback(key.fileobj, mask)
+            # conn, addr = self.handler.accept()
+            # with conn:
+            #     address = addr[0]
+            #     if address == self.self_address:
+            #         continue
+            #     data = conn.recv(1024)
+            #     if not data:
+            #         continue
+            #     time_offset = (datetime.now() - self.time).microseconds
+            #     split_data = data.decode().split(' ')
+            #     available_slots = int(split_data[0])
+            #     timestamp = str(split_data[1])
+            #     address = addr[0]
+            #     if timestamp != str(self.time.timestamp()):
+            #         continue
+            #     node_information = NodeInformation(address, available_slots, time_offset)
+            #     print(node_information)
+            #     self.new_node_callback(node_information)
+
+    def accept_information(self, sock, mask):
+        conn, addr = sock.accept()
+        conn.setblocking(False)
+        self.address_map[conn] = addr[0]
+        self.data_receive_selector.register(conn, selectors.EVENT_READ, self.handle_information)
+
+    def handle_information(self, conn, mask):
+        try:
+            addr = self.address_map[conn]
+            if addr == self.self_address:
+                return
+            data = conn.recv(1024)
+            if not data:
+                return
+            time_offset = (datetime.now() - self.time).microseconds
+            split_data = data.decode().split(' ')
+            available_slots = int(split_data[0])
+            timestamp = str(split_data[1])
+            address = addr[0]
+            if timestamp != str(self.time.timestamp()):
+                return
+            node_information = NodeInformation(address, available_slots, time_offset)
+            print(node_information)
+            self.new_node_callback(node_information)
+        finally:
+            conn.close()
+            del self.address_map[conn]
+            self.data_receive_selector.unregister(conn)
 
     class ScriptReceiver(Thread):
         def __init__(self, job_manager: JobManager):
