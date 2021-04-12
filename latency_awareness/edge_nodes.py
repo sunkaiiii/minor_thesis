@@ -1,15 +1,17 @@
 import time
+import csv
 from node_manager import *
 from task_generator import TaskGenerator
 from task_generator import ComputingTask
 
 
 class EdgeNode(Thread):
-    def __init__(self):
+    def __init__(self, log_file):
         super(EdgeNode, self).__init__()
         self.job_manager = JobManager()
         self.node_manager = NodeManger(self.job_manager)
         self.task_generator = TaskGenerator(self.__handle_coming_task)
+        self.logger = csv.writer(log_file, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
     def run(self) -> None:
         self.node_manager.start()
@@ -27,6 +29,8 @@ class EdgeNode(Thread):
 
     def __handle_coming_task(self, task: ComputingTask):
         print("task comes")
+        # todo write log
+
         if self.job_manager.available_slots() > 0:
             self.job_manager.add_task(task)
             return
