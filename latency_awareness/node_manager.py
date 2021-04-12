@@ -28,7 +28,7 @@ class ClientNode(Thread):
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.job_manager = job_manager
 
-    def __del__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self.client.close()
         print('client closed')
 
@@ -85,7 +85,7 @@ class ServerNode(Thread):
         self.script_receiver = self.ScriptReceiver(job_manager)
         self.self_address = self.__get_local_ip_address()
 
-    def __del__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self.server.close()
         self.handler.close()
         print('server closed')
@@ -147,7 +147,7 @@ class ServerNode(Thread):
             self.file_receiver.setblocking(False)
             self.selector.register(self.file_receiver, selectors.EVENT_READ, self.accept)
 
-        def __del__(self):
+        def __exit__(self, exc_type, exc_val, exc_tb):
             try:
                 self.file_receiver.close()
             except:
@@ -199,6 +199,8 @@ class NodeManger(Thread):
     def stop_service(self):
         del self.client
         del self.server
+        self.client = None
+        self.server = None
 
     def run(self) -> None:
         self.server.start()
