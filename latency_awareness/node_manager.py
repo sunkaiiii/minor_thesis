@@ -160,10 +160,9 @@ class ServerNode(Thread):
             split_data = data.decode().split(' ')
             available_slots = int(split_data[0])
             timestamp = str(split_data[1])
-            address = addr[0]
             if timestamp != str(self.time.timestamp()):
                 return
-            node_information = NodeInformation(address, available_slots, time_offset)
+            node_information = NodeInformation(addr, available_slots, time_offset)
             print(node_information)
             self.new_node_callback(node_information)
         finally:
