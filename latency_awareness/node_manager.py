@@ -336,6 +336,9 @@ class NodeManger(Thread):
     def __on_remote_task_execution_over(self, task: ComputingTask):
         print('remote task execution over')
         addr = self.server.script_receiver.get_original_address(task)
+        print(task)
+        print(addr)
+        print(self.server.script_receiver.task_address_map)
         self.client.send_task_execution_finish(task, addr)
         self.server.script_receiver.del_task_recotd(task)
 
