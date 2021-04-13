@@ -288,6 +288,7 @@ class ServerNode(Thread):
             print('receiving data...')
             try:
                 task_id = int(str(conn.recv(5).decode()).strip())
+                print("received task: "+str(task_id))
                 with open(file_name, 'wb') as f:
                     data = conn.recv(1).decode()
                     while data == ' ':
