@@ -228,7 +228,7 @@ class ServerNode(Thread):
     def __convert_finished_information(self, split_data: [str]):
         print(split_data)
         task_id = split_data[0]
-        finished_time = datetime.fromtimestamp(split_data[1])
+        finished_time = datetime.fromtimestamp(float(split_data[1]))
         self.on_receive_finished_task_information_callback(int(task_id), finished_time)
 
     class ScriptReceiver(Thread):
