@@ -82,3 +82,4 @@ class EdgeNode(Thread):
 if __name__ == '__main__':
     node = EdgeNode()
     node.run_as_receiver()
+    print(node.job_manager.remote_task_execution_finished_callback)
