@@ -56,10 +56,11 @@ class ClientNode(Thread):
 
     class TaskFinishWorker(Thread):
         def __init__(self, task: ComputingTask, addr: str):
+            super().__init__()
             self.task = task
             self.addr = addr
 
-        def run(self) -> None:
+        def run(self):
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     print('send result back to '+self.addr)
