@@ -342,4 +342,5 @@ if __name__ == '__main__':
     job_manager.start()
     node = NodeManger(job_manager)
     node.send_heart_beat()
+    node.start()
     time.sleep(5)
