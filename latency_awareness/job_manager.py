@@ -32,8 +32,6 @@ class JobManager(Thread):
                 subprocess.Popen(['python', file_name]).wait()
                 if self.log_callback is not None and not task.remote_task:
                     self.log_callback(task)
-                print(self.remote_task_execution_finished_callback)
-                print(task.remote_task)
                 if self.remote_task_execution_finished_callback is not None and task.remote_task:
                     print('call remote task execution finished callback')
                     self.remote_task_execution_finished_callback(task)

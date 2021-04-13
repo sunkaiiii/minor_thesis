@@ -63,6 +63,7 @@ class ClientNode(Thread):
         def run(self) -> None:
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    print('send result back to '+self.addr)
                     s.connect((self.addr, 5056))
                     data = '2' + ' ' + str(self.task.id) + str(datetime.now())
                     s.send(data.encode())
@@ -335,8 +336,8 @@ class NodeManger(Thread):
     def __on_remote_task_execution_over(self, task: ComputingTask):
         print('remote task execution over')
         addr = self.server.script_receiver.get_original_address(task)
-        self.server.script_receiver.del_task_recotd(task)
         self.client.send_task_execution_finish(task, addr)
+        self.server.script_receiver.del_task_recotd(task)
 
 
 if __name__ == '__main__':
