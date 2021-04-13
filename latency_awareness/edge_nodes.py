@@ -6,28 +6,33 @@ from task_generator import ComputingTask
 
 
 class EdgeNode(Thread):
-    def __init__(self, log_file):
+    def __init__(self, log_file=None):
         super(EdgeNode, self).__init__()
         self.job_manager = JobManager(self.__task_done_locally)
         self.node_manager = NodeManger(self.job_manager,
                                        on_receive_finished_task_information_callback=self.__receive_task_finished_information)
         self.task_generator = TaskGenerator(self.__handle_coming_task)
-        self.logger = csv.writer(log_file, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        if log_file is not None:
+            self.logger = csv.writer(log_file, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         self.remote_task_map = {}
 
     def run(self) -> None:
         self.node_manager.start()
         self.job_manager.start()
         self.task_generator.start()
-        while not self.task_generator.generate_over:
+        while not self.task_generator.generate_over or len(self.remote_task_map) > 0:
             print('send heart beat')
             self.node_manager.send_heart_beat()
+            print(len(self.remote_task_map))
             time.sleep(1)
         print('stopping service')
         self.node_manager.stop_service()
         self.job_manager.finished = True
         print('wait for job manager')
         self.job_manager.join()
+
+    def run_as_receiver(self):
+        self.node_manager.start()
 
     def __handle_coming_task(self, task: ComputingTask):
         print("task comes")
@@ -51,6 +56,8 @@ class EdgeNode(Thread):
              str(True), '', ''])
 
     def __remote_execution_error(self, task: ComputingTask, node: NodeInformation):
+        print('task '+str(task.id)+" remote executing error by "+str(node))
+        del self.remote_task_map[task.id]
         if task.is_run_in_hurry():
             task.force_local_handling = True
         else:
@@ -62,6 +69,7 @@ class EdgeNode(Thread):
         self.__handle_coming_task(task)
 
     def __receive_task_finished_information(self, task_id: int, finished_time: datetime):
+        print('task '+str(task_id)+' remote execution finished')
         task = self.remote_task_map[task_id][0]
         node = self.remote_task_map[task_id][1]
         del self.remote_task_map[task_id]
@@ -71,4 +79,4 @@ class EdgeNode(Thread):
 
 if __name__ == '__main__':
     node = EdgeNode()
-    node.start()
+    node.run_as_receiver()
