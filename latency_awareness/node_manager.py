@@ -49,6 +49,7 @@ class ClientNode(Thread):
         worker.start()
 
     def send_task_execution_finish(self, task: ComputingTask, addr: str):
+        print('start sending result back to '+addr )
         task_finish_worker = self.TaskFinishWorker(task,addr)
         task_finish_worker.start()
         print('sent finish information')
