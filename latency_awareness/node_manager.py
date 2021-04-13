@@ -49,9 +49,6 @@ class ClientNode(Thread):
         worker.start()
 
     def send_task_execution_finish(self, task: ComputingTask, addr: str):
-        print(addr)
-        if addr is None:
-            return
         task_finish_worker = self.TaskFinishWorker(task,addr)
         task_finish_worker.start()
         print('sent finish information')
