@@ -49,8 +49,8 @@ class ClientNode(Thread):
         worker.start()
 
     def send_task_execution_finish(self, task: ComputingTask, addr: str):
-        print('start sending result back to '+addr )
-        task_finish_worker = self.TaskFinishWorker(task,addr)
+        print('start sending result back to ' + addr)
+        task_finish_worker = self.TaskFinishWorker(task, addr)
         task_finish_worker.start()
         print('sent finish information')
 
@@ -63,9 +63,9 @@ class ClientNode(Thread):
         def run(self):
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    print('send result back to '+self.addr)
+                    print('send result back to ' + self.addr)
                     s.connect((self.addr, 5056))
-                    data = '2' + ' ' + str(self.task.id) + str(datetime.now().timestamp())
+                    data = '2' + ' ' + str(self.task.id) + ' ' + str(datetime.now().timestamp())
                     s.send(data.encode())
             except:
                 print("send remote task finished error")
