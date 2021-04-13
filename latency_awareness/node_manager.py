@@ -65,7 +65,7 @@ class ClientNode(Thread):
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     print('send result back to '+self.addr)
                     s.connect((self.addr, 5056))
-                    data = '2' + ' ' + str(self.task.id) + str(datetime.now())
+                    data = '2' + ' ' + str(self.task.id) + str(datetime.now().timestamp())
                     s.send(data.encode())
             except:
                 print("send remote task finished error")
@@ -226,8 +226,9 @@ class ServerNode(Thread):
         self.new_node_callback(node_information)
 
     def __convert_finished_information(self, split_data: [str]):
+        print(split_data)
         task_id = split_data[0]
-        finished_time = datetime.fromisoformat(split_data[1])
+        finished_time = datetime.fromtimestamp(split_data[1])
         self.on_receive_finished_task_information_callback(int(task_id), finished_time)
 
     class ScriptReceiver(Thread):
