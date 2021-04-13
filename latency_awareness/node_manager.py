@@ -290,7 +290,7 @@ class ServerNode(Thread):
                 task_id = int(str(conn.recv(5).decode()).strip())
                 with open(file_name, 'wb') as f:
                     data = conn.recv(1).decode()
-                    while data != ' ':
+                    while data == ' ':
                         data = conn.recv(1)
                     f.write(data.encode())
                     data = conn.recv(buffer_size)
