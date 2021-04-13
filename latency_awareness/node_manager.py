@@ -49,6 +49,7 @@ class ClientNode(Thread):
         worker.start()
 
     def send_task_execution_finish(self, task: ComputingTask, addr: str):
+        print(addr)
         if addr is None:
             return
         task_finish_worker = self.TaskFinishWorker(task,addr)
@@ -58,7 +59,7 @@ class ClientNode(Thread):
     class TaskFinishWorker(Thread):
         def __init__(self, task: ComputingTask, addr: str):
             self.task = task
-            self.addr = addr[0]
+            self.addr = addr
 
         def run(self) -> None:
             try:
@@ -336,7 +337,7 @@ class NodeManger(Thread):
     def __on_remote_task_execution_over(self, task: ComputingTask):
         print('remote task execution over')
         addr = self.server.script_receiver.get_original_address(task)
-        self.client.send_task_execution_finish(task, addr)
+        self.client.send_task_execution_finish(task, addr[0])
         self.server.script_receiver.del_task_recotd(task)
 
 

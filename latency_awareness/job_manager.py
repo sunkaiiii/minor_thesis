@@ -8,7 +8,7 @@ import subprocess
 class JobManager(Thread):
     def __init__(self, log_callback = None):
         super().__init__()
-        self.capacity = 1
+        self.capacity = multiprocessing.cpu_count() * 2
         self.task_queue = Queue(self.capacity)
         self.log_callback = log_callback
         self.remote_task_execution_finished_callback = None
