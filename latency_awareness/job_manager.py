@@ -33,18 +33,23 @@ class JobManager(Thread):
                 if self.log_callback is not None:
                     self.log_callback(task)
                 if self.remote_task_execution_finished_callback is not None and task.remote_task:
+                    print('wefawefwefawef')
                     self.remote_task_execution_finished_callback(task)
             except:
                 continue
         print('job finished')
+
+def dummy(task):
+    pass
 
 if __name__ == '__main__':
     from task_generator import ComputingTask
 
     i = 0
     job_manager = JobManager()
+    job_manager.remote_task_execution_finished_callback = dummy
     job_manager.start()
     while i < 1000:
-        task = ComputingTask(123, 'task.py')
+        task = ComputingTask(123, 'task.py',remote_task=True)
         job_manager.add_task(task)
     job_manager.join()

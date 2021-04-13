@@ -32,8 +32,9 @@ class EdgeNode(Thread):
         self.job_manager.join()
 
     def run_as_receiver(self):
-        self.job_manager.start()
         self.node_manager.start()
+        self.job_manager.start()
+
 
     def __handle_coming_task(self, task: ComputingTask):
         print("task comes")
