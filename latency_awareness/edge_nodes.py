@@ -52,6 +52,8 @@ class EdgeNode(Thread):
         self.remote_task_map[task.id] = (task, best_node)
 
     def __task_done_locally(self, task: ComputingTask):
+        if self.logger is None:
+            return 
         self.logger.writerow(
             ['task', str(task.id), str(task.generated_time), str(task.deadline), str(datetime.now()),
              str(datetime.now() > task.deadline),
