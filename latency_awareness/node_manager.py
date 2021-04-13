@@ -84,6 +84,7 @@ class ClientNode(Thread):
                     with open(self.task.script_name, 'rb') as f:
                         print('starting send task to ' + self.node.address + ' ,open socket...')
                         s.connect((self.node.address, script_file_recv_port))
+                        s.send(str(self.task.id).encode())
                         print('scoket open, sending data')
                         buffer_size = 2048
                         bytes = f.read(buffer_size)
@@ -281,6 +282,7 @@ class ServerNode(Thread):
             buffer_size = 2048
             file_name = 'script' + addr[0] + datetime.now().strftime('%Y_%m_%d%H_%M_%S') + '.py'
             print('receiving data...')
+            task_id = int(conn.recv(4).decode())
             try:
                 with open(file_name, 'wb') as f:
                     data = conn.recv(buffer_size)
@@ -290,7 +292,7 @@ class ServerNode(Thread):
                     conn.close()
                     del self.connection_map[conn]
                 print('receive file over, start executing')
-                task = ComputingTask(0, file_name, remote_task=True)
+                task = ComputingTask(task_id, file_name, remote_task=True)
                 self.task_address_map[task] = addr
                 self.job_manager.add_task(task)
             except:
