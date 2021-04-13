@@ -88,7 +88,7 @@ class ClientNode(Thread):
                         print('sending data over, close socket')
             except:
                 if self.error_callback is not None:
-                    self.error_callback(self.task, self.node, self)
+                    self.error_callback(self.task, self.node)
 
     def run(self):
         self.client.bind(("", 5055))
@@ -289,6 +289,8 @@ class ServerNode(Thread):
                 task = ComputingTask(0, file_name, remote_task=True)
                 self.task_address_map[task] = addr
                 self.job_manager.add_task(task)
+            except:
+                print('receive error from' + addr)
             finally:
                 self.selector.unregister(conn)
 
