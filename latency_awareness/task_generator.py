@@ -40,7 +40,7 @@ class TaskGenerator(Thread):
         self.generate_over = False
 
     def run(self):
-        while self.task_id < 2000:
+        while self.task_id < 500:
             t = self.generate_task()
             self.task_id += 1
             self.callback(t)

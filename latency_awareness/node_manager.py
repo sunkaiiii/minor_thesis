@@ -31,6 +31,7 @@ class ClientNode(Thread):
         self.FINISHED_INFORMATION = '2'
         self.broadcast_receiver_selectors = selectors.DefaultSelector()
         self.finish = False
+
     def stop_service(self):
         self.client.close()
         self.broadcast_receiver_selectors.close()
@@ -105,8 +106,6 @@ class ClientNode(Thread):
                 s.sendall(result.encode())
 
 
-
-
 class ServerNode(Thread):
     def __init__(self, new_node_callback, job_manager: JobManager, on_receive_finished_task_information_callback):
         super().__init__()
@@ -120,9 +119,8 @@ class ServerNode(Thread):
         self.script_receiver = self.ScriptReceiver(job_manager)
         self.self_address = self.__get_local_ip_address()
         self.address_map = {}
-        self.on_receive_finished_task_information_callback=on_receive_finished_task_information_callback
+        self.on_receive_finished_task_information_callback = on_receive_finished_task_information_callback
         self.finish = False
-
 
     def stop_server(self):
         self.server.close()
@@ -223,10 +221,10 @@ class ServerNode(Thread):
         print(node_information)
         self.new_node_callback(node_information)
 
-    def __convert_finished_information(self,split_data:[str]):
-        task_id=split_data[0]
+    def __convert_finished_information(self, split_data: [str]):
+        task_id = split_data[0]
         finished_time = datetime.fromisoformat(split_data[1])
-        self.on_receive_finished_task_information_callback(int(task_id),finished_time)
+        self.on_receive_finished_task_information_callback(int(task_id), finished_time)
 
     class ScriptReceiver(Thread):
         def __init__(self, job_manager: JobManager):
@@ -240,10 +238,11 @@ class ServerNode(Thread):
             self.file_receiver.setblocking(False)
             self.selector.register(self.file_receiver, selectors.EVENT_READ, self.accept)
             self.task_address_map = {}
-            self.finish=False
+            self.finish = False
 
         def stop_receving(self):
             self.file_receiver.close()
+
         def __exit__(self, exc_type, exc_val, exc_tb):
             try:
                 self.file_receiver.close()
@@ -275,7 +274,7 @@ class ServerNode(Thread):
         def read_script(self, conn, mask):
             addr = self.connection_map[conn]
             buffer_size = 2048
-            file_name = 'script' + addr[0] + '.py'
+            file_name = 'script' + addr[0] + datetime.now().strftime('%Y_%m_%d%H_%M_%S') + '.py'
             print('receiving data...')
             try:
                 with open(file_name, 'wb') as f:
@@ -290,26 +289,23 @@ class ServerNode(Thread):
                 self.task_address_map[task] = addr
                 self.job_manager.add_task(task)
             except:
-                print('receive error from' + addr)
+                print('receive error from' + addr[0])
             finally:
                 self.selector.unregister(conn)
 
 
 class NodeManger(Thread):
-    def __init__(self, job_manager: JobManager,on_receive_finished_task_information_callback=None):
+    def __init__(self, job_manager: JobManager, on_receive_finished_task_information_callback=None):
         super().__init__()
         self.client = ClientNode(job_manager)
-        self.server = ServerNode(self.on_new_node_coming, job_manager,on_receive_finished_task_information_callback)
+        self.server = ServerNode(self.on_new_node_coming, job_manager, on_receive_finished_task_information_callback)
         self.job_manager = job_manager
         self.job_manager.remote_task_execution_finished_callback = self.__on_remote_task_execution_over
         self.nodes = {}
 
-
     def stop_service(self):
         self.client.stop_service()
         self.server.stop_server()
-        self.client = None
-        self.server = None
 
     def run(self) -> None:
         self.server.start()
