@@ -84,8 +84,12 @@ class ClientNode(Thread):
                     with open(self.task.script_name, 'rb') as f:
                         print('starting send task to ' + self.node.address + ' ,open socket...')
                         s.connect((self.node.address, script_file_recv_port))
-                        s.send(str(self.task.id).encode())
                         print('scoket open, sending data')
+                        task_id_len = 5 - len(str(self.task.id))
+                        s.send(str(self.task.id).encode())
+                        while task_id_len > 0:
+                            s.send(' '.encode())
+                            task_id_len -= 1
                         buffer_size = 2048
                         bytes = f.read(buffer_size)
                         while bytes:
@@ -282,8 +286,8 @@ class ServerNode(Thread):
             buffer_size = 2048
             file_name = 'script' + addr[0] + datetime.now().strftime('%Y_%m_%d%H_%M_%S') + '.py'
             print('receiving data...')
-            task_id = int(conn.recv(4).decode())
             try:
+                task_id = int(str(conn.recv(5).decode()).strip())
                 with open(file_name, 'wb') as f:
                     data = conn.recv(buffer_size)
                     while data:
