@@ -52,7 +52,7 @@ class TaskGenerator(Thread):
         self.generate_over = True
 
     def generate_task(self) -> ComputingTask:
-        deadline = datetime.now() + timedelta(seconds=random.randint(5, 30))
+        deadline = datetime.now() + timedelta(seconds=random.randint(20, 30))
         t = ComputingTask(self.task_id, 'task.py', deadline=deadline)
         return t
 

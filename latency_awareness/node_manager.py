@@ -35,6 +35,7 @@ class ClientNode(Thread):
     def stop_service(self):
         self.client.close()
         self.broadcast_receiver_selectors.close()
+        self.finish = True
         print('client closed')
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -103,16 +104,20 @@ class ClientNode(Thread):
     def run(self):
         self.client.bind(("", 5055))
         while not self.finish:
-            data, addr = self.client.recvfrom(1024)
-            print("received message: {0} from {1}".format(data, addr))
-            address = addr[0]
-            port = 5056
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                available_slots = self.job_manager.available_slots()
-                timestamp = data.decode()
-                result = self.BROAD_CAST_IONFOMRATION + ' ' + str(available_slots) + ' ' + str(timestamp)
-                s.connect((address, port))
-                s.sendall(result.encode())
+            try:
+                data, addr = self.client.recvfrom(1024)
+                print("received message: {0} from {1}".format(data, addr))
+                address = addr[0]
+                port = 5056
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(1)
+                    available_slots = self.job_manager.available_slots()
+                    timestamp = data.decode()
+                    result = self.BROAD_CAST_IONFOMRATION + ' ' + str(available_slots) + ' ' + str(timestamp)
+                    s.connect((address, port))
+                    s.sendall(result.encode())
+            except:
+                continue
 
 
 class ServerNode(Thread):
