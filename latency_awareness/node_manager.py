@@ -5,6 +5,7 @@ import selectors
 from datetime import date, datetime
 from threading import Thread
 from task_generator import ComputingTask
+import functools
 
 script_file_recv_port = 5057
 
@@ -293,7 +294,7 @@ class ServerNode(Thread):
             print('receiving data...')
             try:
                 task_id = int(str(conn.recv(5).decode()).strip())
-                print("received task: "+str(task_id))
+                print("received task: " + str(task_id))
                 with open(file_name, 'wb') as f:
                     data = conn.recv(1).decode()
                     while data == ' ':
@@ -323,6 +324,7 @@ class NodeManger(Thread):
         self.job_manager = job_manager
         self.job_manager.remote_task_execution_finished_callback = self.__on_remote_task_execution_over
         self.nodes = {}
+        self.best_nodes = []
 
     def stop_service(self):
         self.client.stop_service()
@@ -341,12 +343,26 @@ class NodeManger(Thread):
 
     def on_new_node_coming(self, node: NodeInformation):
         self.nodes[node.address] = node
+        self.__refresh_best_nodes()
+
+    def __refresh_best_nodes(self):
+        def sort_node(node: NodeInformation, node2: NodeInformation) -> int:
+            latency1 = node.latency
+            latency2 = node2.latency
+            available_slot1 = node.available_slots
+            available_slot2 = node2.available_slots
+            v1 = int(latency1 / available_slot1)
+            v2 = int(latency2 / available_slot2)
+            return v1 - v2
+
+        self.best_nodes = sorted(self.nodes.values(), key=functools.cmp_to_key(sort_node), reverse=False)
+        for n in self.best_nodes:
+            print(n)
 
     def get_best_node(self, except_nodes=None) -> NodeInformation:
         if except_nodes is None:
             except_nodes = []
-        sorted_nodes = sorted(self.nodes.values(), key=lambda x: x.latency, reverse=True)
-        for node in sorted_nodes:
+        for node in self.best_nodes:
             if node not in except_nodes and node.available_slots > 0:
                 return node
 
