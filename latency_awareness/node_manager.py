@@ -356,8 +356,6 @@ class NodeManger(Thread):
             return v1 - v2
 
         self.best_nodes = sorted(self.nodes.values(), key=functools.cmp_to_key(sort_node), reverse=False)
-        for n in self.best_nodes:
-            print(n)
 
     def get_best_node(self, except_nodes=None) -> NodeInformation:
         if except_nodes is None:
