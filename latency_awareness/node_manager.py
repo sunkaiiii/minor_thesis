@@ -351,8 +351,14 @@ class NodeManger(Thread):
             latency2 = node2.latency
             available_slot1 = node.available_slots
             available_slot2 = node2.available_slots
-            v1 = int(latency1 / available_slot1)
-            v2 = int(latency2 / available_slot2)
+            if available_slot1 == 0:
+                v1 = 0x0fffffff
+            else:
+                v1 = int(latency1 / available_slot1)
+            if available_slot2 == 0:
+                v2 = 0x0fffffff
+            else:
+                v2 = int(latency2 / available_slot2)
             return v1 - v2
 
         self.best_nodes = sorted(self.nodes.values(), key=functools.cmp_to_key(sort_node), reverse=False)
