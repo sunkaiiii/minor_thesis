@@ -40,14 +40,14 @@ class TaskGenerator(Thread):
         self.generate_over = False
 
     def run(self):
-        while self.task_id < 500:
+        while self.task_id < 1500:
             t = self.generate_task()
             self.task_id += 1
             self.callback(t)
             # time.sleep(random.randint(1,10))
 
             # the interval for generating a task may vary depending on different testing method.
-            time.sleep(random.randint(1, 400) / 1000.0)
+            time.sleep(random.randint(10, 150) / 1000.0)
             # time.sleep(random.randint(1, 2) / 1000.0)
         self.generate_over = True
 
