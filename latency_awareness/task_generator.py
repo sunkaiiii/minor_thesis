@@ -10,7 +10,7 @@ class ComputingTask:
     The computing task contains an executable scirpt.
     """
 
-    def __init__(self, id, script_name, deadline=None, except_nodes_id=[],remote_task=False):
+    def __init__(self, id, script_name, deadline=None, except_nodes_id=[], remote_task=False):
         super().__init__()
         self.id = id
         self.script_name = script_name
@@ -52,8 +52,12 @@ class TaskGenerator(Thread):
         self.generate_over = True
 
     def generate_task(self) -> ComputingTask:
-        deadline = datetime.now() + timedelta(seconds=random.randint(20, 30))
-        t = ComputingTask(self.task_id, 'task.py', deadline=deadline)
+        deadline = datetime.now() + timedelta(seconds=random.randint(8, 16))
+        seed = random.randint(0,20)
+        if seed % 2 == 0:
+            t = ComputingTask(self.task_id, 'task.py', deadline=deadline)
+        else:
+            t = ComputingTask(self.task_id, 'offloading_task.py', deadline=deadline)
         return t
 
 
