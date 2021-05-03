@@ -268,20 +268,26 @@ class ServerNode(Thread):
                 print('close socket error')
 
         def accept(self, sock, mask):
-            print('receive task offloading request')
-            conn, addr = sock.accept()
-            self.connection_map[conn] = addr
-            conn.setblocking(False)
-            self.selector.register(conn, selectors.EVENT_READ, self.read_script)
+            try:
+                print('receive task offloading request')
+                conn, addr = sock.accept()
+                self.connection_map[conn] = addr
+                conn.setblocking(False)
+                self.selector.register(conn, selectors.EVENT_READ, self.read_script)
+            except Exception as e:
+                print(e)
 
         def run(self) -> None:
-            while not self.finish:
-                events = self.selector.select()
-                for key, mask in events:
-                    # get the callback
-                    callback = key.data
-                    # calling callbak
-                    callback(key.fileobj, mask)
+            try:
+                while not self.finish:
+                    events = self.selector.select()
+                    for key, mask in events:
+                        # get the callback
+                        callback = key.data
+                        # calling callbak
+                        callback(key.fileobj, mask)
+            except Exception as e:
+                print(e)
 
         def get_original_address(self, task):
             return self.task_address_map[task]
@@ -290,11 +296,11 @@ class ServerNode(Thread):
             del self.task_address_map[task]
 
         def read_script(self, conn, mask):
-            addr = self.connection_map[conn]
-            buffer_size = 2048
-            file_name = 'script' + addr[0] + datetime.now().strftime('%Y_%m_%d%H_%M_%S')+str(uuid.uuid4()) + '.py'
-            print('receiving data...')
             try:
+                addr = self.connection_map[conn]
+                buffer_size = 2048
+                file_name = 'script' + addr[0] + datetime.now().strftime('%Y_%m_%d%H_%M_%S') + str(uuid.uuid4()) + '.py'
+                print('receiving data...')
                 task_id = int(str(conn.recv(5).decode()).strip())
                 print("received task: " + str(task_id))
                 with open(file_name, 'wb') as f:
