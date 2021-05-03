@@ -348,6 +348,7 @@ class NodeManger(Thread):
         self.server.send_heart_beat()
 
     def send_task_to_best_node(self, task: ComputingTask, node: NodeInformation, error_callback=None):
+        node.available_slots -= 1
         self.client.send_task(task, node, error_callback)
 
     def on_new_node_coming(self, node: NodeInformation):
