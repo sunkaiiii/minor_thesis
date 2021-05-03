@@ -1,3 +1,5 @@
+import uuid
+
 from job_manager import JobManager
 import socket
 import time
@@ -290,7 +292,7 @@ class ServerNode(Thread):
         def read_script(self, conn, mask):
             addr = self.connection_map[conn]
             buffer_size = 2048
-            file_name = 'script' + addr[0] + datetime.now().strftime('%Y_%m_%d%H_%M_%S') + '.py'
+            file_name = 'script' + addr[0] + datetime.now().strftime('%Y_%m_%d%H_%M_%S')+str(uuid.uuid4()) + '.py'
             print('receiving data...')
             try:
                 task_id = int(str(conn.recv(5).decode()).strip())
