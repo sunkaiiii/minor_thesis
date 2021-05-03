@@ -4,8 +4,8 @@ import csv
 
 
 class ExperimentHandler:
-    def __init__(self, sort_strategy):
-        self.experiment_name = 'latency_' + datetime.now().strftime('%Y_%m_%d%H_%M_%S')
+    def __init__(self, sort_strategy,time):
+        self.experiment_name = 'latency_' + datetime.now().strftime('%Y_%m_%d%H_%M_%S')+"_sort_straetgy"+str(sort_strategy)+"_time"+str(time)
         self.log_file = open(self.experiment_name + '.csv', 'w', newline='')
         self.spamwriter = csv.writer(self.log_file, delimiter=',', quotechar='\'', quoting=csv.QUOTE_MINIMAL)
         self.sort_strategy = sort_strategy
@@ -25,7 +25,7 @@ class ExperimentHandler:
 
 if __name__ == '__main__':
     for i in range(0,3):
-        for i in range(0,10):
-            experiment = ExperimentHandler()
+        for j in range(0,10):
+            experiment = ExperimentHandler(sort_strategy=i,time=j+1)
             print(experiment.experiment_name)
             experiment.start_experiment()
