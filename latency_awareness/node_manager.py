@@ -304,8 +304,6 @@ class ServerNode(Thread):
                     while data:
                         f.write(data)
                         data = conn.recv(buffer_size)
-                    conn.close()
-                    del self.connection_map[conn]
                 print('receive file over, start executing')
                 task = ComputingTask(task_id, file_name, remote_task=True)
                 self.task_address_map[task] = addr
@@ -313,6 +311,8 @@ class ServerNode(Thread):
             except:
                 print('receive error from' + addr[0])
             finally:
+                del self.connection_map[conn]
+                conn.close()
                 self.selector.unregister(conn)
 
 
