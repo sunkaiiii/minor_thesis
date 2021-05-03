@@ -6,11 +6,11 @@ from task_generator import ComputingTask
 
 
 class EdgeNode(Thread):
-    def __init__(self, log_file=None):
+    def __init__(self, log_file=None, sort_strategy = 2):
         super(EdgeNode, self).__init__()
         self.job_manager = JobManager(self.__task_done_locally)
         self.node_manager = NodeManger(self.job_manager,
-                                       on_receive_finished_task_information_callback=self.__receive_task_finished_information)
+                                       on_receive_finished_task_information_callback=self.__receive_task_finished_information,sort_strategy = sort_strategy)
         self.task_generator = TaskGenerator(self.__handle_coming_task)
         if log_file is not None:
             self.logger = csv.writer(log_file, delimiter=',', quotechar='\'', quoting=csv.QUOTE_MINIMAL)

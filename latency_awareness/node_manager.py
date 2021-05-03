@@ -317,7 +317,7 @@ class ServerNode(Thread):
 
 
 class NodeManger(Thread):
-    def __init__(self, job_manager: JobManager, on_receive_finished_task_information_callback=None):
+    def __init__(self, job_manager: JobManager, on_receive_finished_task_information_callback=None, sort_strategy=0):
         super().__init__()
         self.client = ClientNode(job_manager)
         self.server = ServerNode(self.on_new_node_coming, job_manager, on_receive_finished_task_information_callback)
@@ -325,6 +325,7 @@ class NodeManger(Thread):
         self.job_manager.remote_task_execution_finished_callback = self.__on_remote_task_execution_over
         self.nodes = {}
         self.best_nodes = []
+        self.sort_strategy = sort_strategy
 
     def stop_service(self):
         self.client.stop_service()
@@ -346,22 +347,40 @@ class NodeManger(Thread):
         self.__refresh_best_nodes()
 
     def __refresh_best_nodes(self):
-        def sort_node(node: NodeInformation, node2: NodeInformation) -> int:
-            latency1 = node.latency
-            latency2 = node2.latency
-            available_slot1 = node.available_slots
-            available_slot2 = node2.available_slots
-            if available_slot1 == 0:
-                v1 = 0x0fffffff
-            else:
-                v1 = int(latency1 / available_slot1)
-            if available_slot2 == 0:
-                v2 = 0x0fffffff
-            else:
-                v2 = int(latency2 / available_slot2)
-            return v1 - v2
+        if self.sort_strategy == 0:
+            sort_node = self.sort_node_by_capacity
+        elif self.sort_strategy == 1:
+            sort_node = self.sort_node_by_latency
+        elif self.sort_strategy == 2:
+            sort_node = self.sort_node_by_latency_capacity
+        else:
+            sort_node = self.sort_node_by_capacity
 
         self.best_nodes = sorted(self.nodes.values(), key=functools.cmp_to_key(sort_node), reverse=False)
+
+    @staticmethod
+    def sort_node_by_capacity(node: NodeInformation, node2: NodeInformation):
+        return -(node.available_slots-node2.available_slots)
+
+    @staticmethod
+    def sort_node_by_latency(node: NodeInformation, node2: NodeInformation):
+        return node.latency-node2.latency
+
+    @staticmethod
+    def sort_node_by_latency_capacity(node: NodeInformation, node2: NodeInformation) -> int:
+        latency1 = node.latency
+        latency2 = node2.latency
+        available_slot1 = node.available_slots
+        available_slot2 = node2.available_slots
+        if available_slot1 == 0:
+            v1 = 0x0fffffff
+        else:
+            v1 = int(latency1 / available_slot1)
+        if available_slot2 == 0:
+            v2 = 0x0fffffff
+        else:
+            v2 = int(latency2 / available_slot2)
+        return v1 - v2
 
     def get_best_node(self, except_nodes=None) -> NodeInformation:
         if except_nodes is None:

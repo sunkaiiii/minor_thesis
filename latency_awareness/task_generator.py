@@ -53,7 +53,7 @@ class TaskGenerator(Thread):
 
     def generate_task(self) -> ComputingTask:
         deadline = datetime.now() + timedelta(seconds=random.randint(8, 16))
-        seed = random.randint(0,20)
+        seed = 0
         if seed % 2 == 0:
             t = ComputingTask(self.task_id, 'task.py', deadline=deadline)
         else:
