@@ -73,7 +73,6 @@ class ClientNode(Thread):
                     print('send result back to ' + self.addr)
                     s.connect((self.addr, 5056))
                     data = '2' + ' ' + str(self.task.id) + ' ' + str(datetime.now().timestamp())
-                    print(self.task.result_file_name)
                     if self.task.result_file_name is not None:
                         try:
                             with open(self.task.result_file_name,'rb') as f:
