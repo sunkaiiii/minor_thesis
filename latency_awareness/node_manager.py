@@ -76,9 +76,9 @@ class ClientNode(Thread):
                     print(self.task.result_file_name)
                     if self.task.result_file_name is not None:
                         try:
-                            with open(self.task.result_file_name) as f:
+                            with open(self.task.result_file_name,'rb') as f:
                                 file_data = f.read()
-                                data = data + ' ' + str(base64.b64encode(file_data.encode()))
+                                data = data + ' ' + str(base64.b64encode(file_data))
                             os.remove(self.task.result_file_name)
                         except Exception as e:
                             print(e)
