@@ -230,7 +230,6 @@ class ServerNode(Thread):
             if not data:
                 return
             split_data = data.decode().split(' ')
-            print(split_data)
             if split_data[0] == '1':
                 self.__convert_broadcast_info(addr, split_data[1:])
             elif split_data[0] == '2':
