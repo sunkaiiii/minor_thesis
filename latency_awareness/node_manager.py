@@ -228,8 +228,8 @@ class ServerNode(Thread):
             data = conn.recv(8192)
             if not data:
                 return
-            print(data.decode())
             split_data = data.decode().split(' ')
+            print(split_data)
             if split_data[0] == '1':
                 self.__convert_broadcast_info(addr, split_data[1:])
             elif split_data[0] == '2':
@@ -325,7 +325,7 @@ class ServerNode(Thread):
                         f.write(data)
                         data = conn.recv(buffer_size)
                 print('receive file over, start executing')
-                task = ComputingTask(task_id, file_name, remote_task=True)
+                task = ComputingTask(task_id, file_name, remote_task=True,result_file_name='offloading_result.jpg')
                 self.task_address_map[task] = addr
                 self.job_manager.add_task(task)
             except:
