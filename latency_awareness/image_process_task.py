@@ -1,4 +1,5 @@
 import cv2
+import subprocess
 
 
 def detect_face(img):
@@ -11,5 +12,6 @@ def detect_face(img):
     return gray[y:y + w, x:x + h], faces[0]
 
 
+subprocess.Popen(['python', "offloading_task.py"]).wait()
 img = cv2.imread('offloading_result.jpg')
 print(detect_face(img))
