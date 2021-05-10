@@ -78,7 +78,7 @@ class ClientNode(Thread):
                         try:
                             with open(self.task.result_file_name) as f:
                                 file_data = f.read()
-                                data = data + ' ' + str(base64.b64encode(file_data.encode('utf-8')))
+                                data = data + ' ' + str(base64.b64encode(file_data.encode()))
                             os.remove(self.task.result_file_name)
                         except Exception as e:
                             print(e)
