@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from job_manager import JobManager
@@ -8,6 +9,8 @@ from datetime import date, datetime
 from threading import Thread
 from task_generator import ComputingTask
 import functools
+import base64
+
 
 script_file_recv_port = 5057
 
@@ -70,6 +73,15 @@ class ClientNode(Thread):
                     print('send result back to ' + self.addr)
                     s.connect((self.addr, 5056))
                     data = '2' + ' ' + str(self.task.id) + ' ' + str(datetime.now().timestamp())
+                    if self.task.result_file_name is not None:
+                        try:
+                            with open(self.task.result_file_name) as f:
+                                file_data = f.read()
+                                data = data + ' ' + str(base64.b64encode(file_data.encode('utf-8')))
+                            os.remove(self.task.result_file_name)
+                        except Exception as e:
+                            print(e)
+
                     s.send(data.encode())
             except:
                 print("send remote task finished error")
@@ -213,10 +225,10 @@ class ServerNode(Thread):
             addr = self.address_map[conn]
             if addr == self.self_address:
                 return
-            data = conn.recv(1024)
+            data = conn.recv(8192)
             if not data:
                 return
-
+            print(data.decode())
             split_data = data.decode().split(' ')
             if split_data[0] == '1':
                 self.__convert_broadcast_info(addr, split_data[1:])

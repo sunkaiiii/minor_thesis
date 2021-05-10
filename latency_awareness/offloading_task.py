@@ -47,13 +47,19 @@ offloading a file from the remote url
 def offloading_file(url):
     print("starting offloading url:" + url)
     id = task_cacher.create_id(url)
-    if handler.get_cache_data(id) is not None:
+    data = handler.get_cache_data(id)
+    if data is not None:
+        f = open("offloading_result.jpg",'wb')
+        f.write(data.data)
+        f.close()
         return
     r = requests.get(url, allow_redirects=True)
     data = CacheData(id, r.content)
     # the data will be saved in memory and might be saved in local storage
     # TODO persistance switch
     handler.cache_data(data, True)
+    with open("offloading_result.jpg",'wb') as f:
+        f.write(data.data)
 
 
 def __send_data_back(data: CacheData):

@@ -10,7 +10,7 @@ class ComputingTask:
     The computing task contains an executable scirpt.
     """
 
-    def __init__(self, id, script_name, deadline=None, except_nodes_id=[], remote_task=False):
+    def __init__(self, id, script_name, deadline=None, except_nodes_id=[], remote_task=False, result_file_name = None):
         super().__init__()
         self.id = id
         self.script_name = script_name
@@ -20,6 +20,7 @@ class ComputingTask:
         self.is_multi_delievering = False
         self.force_local_handling = False
         self.remote_task = remote_task
+        self.result_file_name = result_file_name
 
     def is_run_in_hurry(self) -> bool:
         if self.deadline is None:
@@ -57,7 +58,7 @@ class TaskGenerator(Thread):
         if seed % 2 == 0:
             t = ComputingTask(self.task_id, 'task.py', deadline=deadline)
         else:
-            t = ComputingTask(self.task_id, 'offloading_task.py', deadline=deadline)
+            t = ComputingTask(self.task_id, 'offloading_task.py', deadline=deadline, result_file_name='offloading_result.jpg')
         return t
 
 

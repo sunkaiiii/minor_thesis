@@ -35,8 +35,9 @@ class JobManager(Thread):
                     self.log_callback(task)
                 if self.remote_task_execution_finished_callback is not None and task.remote_task:
                     print('call remote task execution finished callback')
-                    os.remove(file_name)
                     self.remote_task_execution_finished_callback(task)
+                    os.remove(file_name)
+
             except:
                 continue
         print('job finished')
