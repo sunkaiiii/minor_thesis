@@ -55,10 +55,12 @@ class TaskGenerator(Thread):
     def generate_task(self) -> ComputingTask:
         deadline = datetime.now() + timedelta(seconds=random.randint(8, 16))
         seed = 0
-        if seed % 2 == 0:
-            t = ComputingTask(self.task_id, 'task.py', deadline=deadline)
-        else:
-            t = ComputingTask(self.task_id, 'offloading_task.py', deadline=deadline, result_file_name='offloading_result.jpg')
+        t = ComputingTask(self.task_id, 'image_process_task.py', deadline=deadline,
+                          result_file_name='offloading_result.jpg')
+        # if seed % 2 == 0:
+        #     t = ComputingTask(self.task_id, 'task.py', deadline=deadline)
+        # else:
+        #     t = ComputingTask(self.task_id, 'offloading_task.py', deadline=deadline, result_file_name='offloading_result.jpg')
         return t
 
 
