@@ -80,12 +80,15 @@ class EdgeNode(Thread):
         self.__handle_coming_task(task)
 
     def __receive_task_finished_information(self, task_id: int, finished_time: datetime):
-        print('task ' + str(task_id) + ' remote execution finished')
-        task = self.remote_task_map[task_id][0]
-        node = self.remote_task_map[task_id][1]
-        del self.remote_task_map[task_id]
-        self.logger.writerow(['task', str(task.id), str(task.generated_time), str(task.deadline), str(finished_time),
-                              str(finished_time < task.deadline), str(True), str(node.address), str(node.latency)])
+        try:
+            print('task ' + str(task_id) + ' remote execution finished')
+            task = self.remote_task_map[task_id][0]
+            node = self.remote_task_map[task_id][1]
+            del self.remote_task_map[task_id]
+            self.logger.writerow(['task', str(task.id), str(task.generated_time), str(task.deadline), str(finished_time),
+                                  str(finished_time < task.deadline), str(True), str(node.address), str(node.latency)])
+        except Exception as e:
+            print(e)
 
 
 if __name__ == '__main__':
