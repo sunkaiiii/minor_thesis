@@ -325,7 +325,7 @@ class ServerNode(Thread):
                         f.write(data)
                         data = conn.recv(buffer_size)
                 print('receive file over, start executing')
-                task = ComputingTask(task_id, file_name, remote_task=True,result_file_name='offloading_result.jpg')
+                task = ComputingTask(task_id, file_name, remote_task=True)
                 self.task_address_map[task] = addr
                 self.job_manager.add_task(task)
             except:

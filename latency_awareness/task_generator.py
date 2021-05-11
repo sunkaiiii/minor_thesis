@@ -35,14 +35,14 @@ class TaskGenerator(Thread):
     The types of a task will be four types
     """
 
-    def __init__(self, callback, task_size=300):
+    def __init__(self, callback, task_size=1200):
         super().__init__()
         self.callback = callback
         self.task_id = 0
         self.generate_over = False
         self.task_size = task_size
-        self.deadline = random.poisson(lam=40, size=self.task_size)
-        self.delay = random.poisson(lam=1100, size=self.task_size)
+        self.deadline = random.poisson(lam=20, size=self.task_size)
+        self.delay = random.poisson(lam=250, size=self.task_size)
 
     def run(self):
         while self.task_id < self.task_size:
@@ -59,8 +59,7 @@ class TaskGenerator(Thread):
     def generate_task(self, id: int) -> ComputingTask:
         deadline = datetime.now() + timedelta(seconds=int(self.deadline[id]))
         seed = 0
-        t = ComputingTask(self.task_id, 'image_process_task.py', deadline=deadline,
-                          result_file_name='offloading_result.jpg')
+        t = ComputingTask(self.task_id, 'image_process_task.py', deadline=deadline)
         # if seed % 2 == 0:
         #     t = ComputingTask(self.task_id, 'task.py', deadline=deadline)
         # else:
