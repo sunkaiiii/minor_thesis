@@ -9,7 +9,7 @@ import subprocess
 class JobManager(Thread):
     def __init__(self, log_callback = None):
         super().__init__()
-        self.capacity = multiprocessing.cpu_count() * 3
+        self.capacity = 12
         self.task_queue = Queue(self.capacity)
         self.log_callback = log_callback
         self.remote_task_execution_finished_callback = None
@@ -30,7 +30,7 @@ class JobManager(Thread):
                 task = self.task_queue.get(timeout=1)
                 file_name = task.script_name
                 print('start_executing:'+file_name)
-                subprocess.Popen(['python3', file_name]).wait()
+                subprocess.Popen(['python', file_name]).wait()
                 if self.log_callback is not None and not task.remote_task:
                     self.log_callback(task)
                 if self.remote_task_execution_finished_callback is not None and task.remote_task:

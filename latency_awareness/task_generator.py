@@ -41,7 +41,7 @@ class TaskGenerator(Thread):
         self.task_id = 0
         self.generate_over = False
         self.task_size = task_size
-        self.deadline = random.poisson(lam=20, size=self.task_size)
+        self.deadline = random.poisson(lam=10, size=self.task_size)
         self.delay = random.poisson(lam=250, size=self.task_size)
 
     def run(self):
@@ -59,11 +59,11 @@ class TaskGenerator(Thread):
     def generate_task(self, id: int) -> ComputingTask:
         deadline = datetime.now() + timedelta(seconds=int(self.deadline[id]))
         seed = 0
-        t = ComputingTask(self.task_id, 'image_process_task.py', deadline=deadline)
+        # t = ComputingTask(self.task_id, 'image_process_task.py', deadline=deadline)
         # if seed % 2 == 0:
-        #     t = ComputingTask(self.task_id, 'task.py', deadline=deadline)
+        # t = ComputingTask(self.task_id, 'task.py', deadline=deadline)
         # else:
-        #     t = ComputingTask(self.task_id, 'offloading_task.py', deadline=deadline, result_file_name='offloading_result.jpg')
+        t = ComputingTask(self.task_id, 'offloading_task.py', deadline=deadline, result_file_name='offloading_result.jpg')
         return t
 
 

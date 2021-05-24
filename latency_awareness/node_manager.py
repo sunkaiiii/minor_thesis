@@ -374,6 +374,8 @@ class NodeManger(Thread):
             sort_node = self.sort_node_by_latency
         elif self.sort_strategy == 2:
             sort_node = self.sort_node_by_latency_capacity
+        elif self.sort_strategy == 3:
+            sort_node = self.sort_node_by_capacity_latency
         else:
             sort_node = self.sort_node_by_capacity
 
@@ -393,6 +395,22 @@ class NodeManger(Thread):
         latency2 = node2.latency
         available_slot1 = node.available_slots
         available_slot2 = node2.available_slots
+        if available_slot1 == 0:
+            v1 = 0x0fffffff
+        else:
+            v1 = int(latency1 / available_slot1)
+        if available_slot2 == 0:
+            v2 = 0x0fffffff
+        else:
+            v2 = int(latency2 / available_slot2)
+        return v1 - v2
+
+    @staticmethod
+    def sort_node_by_capacity_latency(node:NodeInformation,node2:NodeInformation)->int:
+        latency1 = node.latency
+        latency2 = node2.latency
+        available_slot1 = node.available_slots * 4
+        available_slot2 = node2.available_slots * 4
         if available_slot1 == 0:
             v1 = 0x0fffffff
         else:
