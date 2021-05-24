@@ -42,7 +42,7 @@ class TaskGenerator(Thread):
         self.generate_over = False
         self.task_size = task_size
         self.deadline = random.poisson(lam=10, size=self.task_size)
-        self.delay = random.poisson(lam=250, size=self.task_size)
+        self.delay = random.poisson(lam=100, size=self.task_size)
 
     def run(self):
         while self.task_id < self.task_size:

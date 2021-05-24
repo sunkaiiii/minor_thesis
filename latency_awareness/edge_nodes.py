@@ -85,8 +85,8 @@ class EdgeNode(Thread):
             task = self.remote_task_map[task_id][0]
             node = self.remote_task_map[task_id][1]
             del self.remote_task_map[task_id]
-            self.logger.writerow(['task', str(task.id), str(task.generated_time), str(task.deadline), str(finished_time),
-                                  str(finished_time < task.deadline), str(True), str(node.address), str(node.latency)])
+            self.logger.writerow(['task', str(task.id), str(task.generated_time), str(task.deadline), str(datetime.now()),
+                                  str(datetime.now() < task.deadline), str(True), str(node.address), str(node.latency)])
         except Exception as e:
             print(e)
 
